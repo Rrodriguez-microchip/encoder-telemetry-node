@@ -148,6 +148,7 @@
       <itemPath>../src/services/delay.h</itemPath>
       <itemPath>../src/drivers/lcd_hd44780.h</itemPath>
       <itemPath>../src/app/app.h</itemPath>
+      <itemPath>../src/services/timebase.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -239,6 +240,7 @@
       <itemPath>../src/app/app.c</itemPath>
       <itemPath>../src/drivers/lcd_hd44780.c</itemPath>
       <itemPath>../src/services/delay.c</itemPath>
+      <itemPath>../src/services/timebase.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
