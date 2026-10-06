@@ -1,0 +1,33 @@
+# ---- MPLAB X build output ----
+**/*.X/build/
+**/*.X/dist/
+**/*.X/debug/
+**/*.X/.generated_files/
+
+# ---- MPLAB X per-user / regenerated project files ----
+**/*.X/nbproject/private/
+**/*.X/nbproject/Makefile-*.mk
+**/*.X/nbproject/Makefile-genesis.properties
+**/*.X/nbproject/Package-*.bash
+**/*.X/mcc-manifest-autosave.yml
+
+# ---- Compiler artifacts (anywhere) ----
+*.o
+*.d
+*.elf
+*.hex
+*.map
+*.cof
+*.lst
+*.a
+
+# ---- Host-side unit tests ----
+tests/build/
+
+# ---- OS / editor noise ----
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+*~
+.vscode/
