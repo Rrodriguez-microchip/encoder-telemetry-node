@@ -3,11 +3,13 @@
  * Bare-metal superloop: no task ever waits, it only checks the clock.
  * Each task owns a "last run" timestamp; the shared timebase never resets.
  *
- * Current stage: P1 encoder bench readout (KY-040 hand knob).
+ * Current stage: P1 encoder + telemetry + robustness (KY-040 hand knob).
+ *   - watchdog kicked every pass (resets the node if the loop ever hangs)
  *   - LED toggles every 500 ms (alive indicator)
  *   - encoder_task() runs every pass (debounce + RPM)
- *   - LCD row 0: count / detents / revs   row 1: rpm / dir / button events
- *   - UART: one dump line at ~10 Hz with every value, for the acceptance tests
+ *   - telemetry_task() emits the ~10 Hz JSON line over UART (MQTT payload shape),
+ *     non-blocking so a stalled UART can't hang the loop
+ *   - LCD row 0: count / detents / revs   row 1: rpm / dir / button
  */
 #include <stdio.h>
 #include "definitions.h"
@@ -16,10 +18,11 @@
 #include "services/timebase.h"
 #include "drivers/lcd_hd44780.h"
 #include "drivers/encoder.h"
+#include "services/telemetry.h"
+#include "services/wdt.h"
 
 #define LED_PERIOD_MS       500U
 #define LCD_PERIOD_MS       100U     /* readable, no flicker (overwrite+pad) */
-#define UART_PERIOD_MS      100U     /* ~10 Hz, same cadence as future JSON */
 
 static char dir_char(int8_t d)
 {
@@ -34,18 +37,20 @@ void app_run(void)
     timebase_init();
     lcd_init();
     encoder_init();                 /* after timebase: edges stamp with us */
+    wdt_init();                     /* start the watchdog; kicked every pass */
     printf("\r\nP1 encoder bench\r\n");
 
     uint32_t now   = timebase_ms();
     uint32_t t_led = now;
     uint32_t t_lcd = now;
-    uint32_t t_uart = now;
 
     for (;;)
     {
         now = timebase_ms();
 
+        wdt_kick();                 /* pet the dog: loop is alive */
         encoder_task();             /* cheap, self-rate-limiting */
+        telemetry_task();           /* ~10 Hz JSON over UART, non-blocking */
 
         if ((now - t_led) >= LED_PERIOD_MS)
         {
@@ -66,30 +71,19 @@ void app_run(void)
                            (long)cnt, (long)det, (long)rev);
             lcd_write_line(0U, line);
 
-            (void)snprintf(line, sizeof line, "rpm%lu.%lu %c ev%lu",
-                           (unsigned long)(r10 / 10U),
+            /* Clamp the whole part to 4 digits so the row always fits 16 cols
+             * (the compiler can't prove the uint is small; a real sensor won't
+             * reach 9999 RPM but the display must not silently truncate). */
+            uint32_t rpm_whole = r10 / 10U;
+            if (rpm_whole > 9999U)
+            {
+                rpm_whole = 9999U;
+            }
+            (void)snprintf(line, sizeof line, "rpm %lu.%lu %c",
+                           (unsigned long)rpm_whole,
                            (unsigned long)(r10 % 10U),
-                           dir_char(encoder_get_direction()),
-                           (unsigned long)encoder_get_button_events());
+                           dir_char(encoder_get_direction()));
             lcd_write_line(1U, line);
-        }
-
-        if ((now - t_uart) >= UART_PERIOD_MS)
-        {
-            t_uart += UART_PERIOD_MS;
-
-            uint32_t r10 = encoder_get_rpm_x10();
-            printf("count=%ld det=%ld rev=%ld dir=%d rpm=%lu.%lu "
-                   "btn=%d ev=%lu inval=%lu\r\n",
-                   (long)encoder_get_count(),
-                   (long)encoder_get_detents(),
-                   (long)encoder_get_revolutions(),
-                   (int)encoder_get_direction(),
-                   (unsigned long)(r10 / 10U),
-                   (unsigned long)(r10 % 10U),
-                   (int)encoder_get_button(),
-                   (unsigned long)encoder_get_button_events(),
-                   (unsigned long)encoder_get_invalid_count());
         }
     }
 }

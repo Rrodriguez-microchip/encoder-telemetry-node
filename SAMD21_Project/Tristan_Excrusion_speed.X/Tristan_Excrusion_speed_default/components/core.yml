@@ -89,7 +89,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '24'
+            value: '31'
           type: User
         type: Values
       type: Integer
@@ -100,7 +100,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '24'
+            value: '31'
           type: Dynamic
         type: Values
       type: Integer
@@ -111,7 +111,7 @@ data:
       - children:
         - attributes:
             id: core
-            value: '2000000'
+            value: '1057'
           type: Dynamic
         type: Values
       type: Integer
@@ -121,7 +121,7 @@ data:
       children:
       - children:
         - attributes:
-            value: '7'
+            value: '3'
           type: User
         type: Values
       type: KeyValueSet
@@ -2502,6 +2502,93 @@ data:
           type: Dynamic
         type: Values
       type: Boolean
+    GCLK_ID_3_FREQ:
+      attributes:
+        id: GCLK_ID_3_FREQ
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '1057'
+          type: Dynamic
+        type: Values
+      type: Integer
+    GCLK_ID_3_GENSEL:
+      attributes:
+        id: GCLK_ID_3_GENSEL
+      children:
+      - children:
+        - attributes:
+            value: '2'
+          type: User
+        type: Values
+      type: KeyValueSet
+    GCLK_ID_3_CHEN:
+      attributes:
+        id: GCLK_ID_3_CHEN
+      children:
+      - children:
+        - attributes:
+            value: 'true'
+          type: User
+        type: Values
+      type: Boolean
+    DEVICE_WDT_ENABLE:
+      attributes:
+        id: DEVICE_WDT_ENABLE
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '0'
+          type: Dynamic
+        - attributes:
+            value: '1'
+          type: User
+        type: Values
+      type: KeyValueSet
+    DEVICE_WDT_WINDOW_0:
+      attributes:
+        id: DEVICE_WDT_WINDOW_0
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '1'
+          type: Dynamic
+        type: Values
+      type: KeyValueSet
+    DEVICE_WDT_WINDOW_1:
+      attributes:
+        id: DEVICE_WDT_WINDOW_1
+      children:
+      - children:
+        - attributes:
+            id: core
+            value: '5'
+          type: Dynamic
+        type: Values
+      type: Hex
+    DEVICE_WDT_WINDOW:
+      attributes:
+        id: DEVICE_WDT_WINDOW
+      children:
+      - children:
+        - attributes:
+            value: '11'
+          type: User
+        type: Values
+      type: KeyValueSet
+    DEVICE_WDT_PER:
+      attributes:
+        id: DEVICE_WDT_PER
+      children:
+      - children:
+        - attributes:
+            value: '8'
+          type: User
+        type: Values
+      type: KeyValueSet
   userData:
     children:
     - attributes:

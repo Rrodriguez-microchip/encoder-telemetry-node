@@ -34,7 +34,7 @@ generatedFileHashHistoryMap:
 - file: ..\src\config\default\exceptions.c
   hash: d1567a190561858cc1cb7e796cf1a29720e52b9799bbd88b087993d8539e137f
 - file: ..\src\config\default\initialization.c
-  hash: bffada0ceed5a22dc023cef98cffd02cdc73999d656348676bb630663e5ba513
+  hash: 3ac4a3d236cdfd06a460fba5b0aefdf963a46d32d5969f71df2f4d99522b8e6f
 - file: ..\src\config\default\interrupts.c
   hash: 8371f7c8ca82d57da5b8c2f3d8e081ac9ab5cd310e07595e7ee34337266d6652
 - file: ..\src\config\default\interrupts.h
@@ -42,7 +42,7 @@ generatedFileHashHistoryMap:
 - file: ..\src\config\default\libc_syscalls.c
   hash: c9afc1b1257829415a1a6746ce3744f0a768b339d59fff2ab3ca1fab58b2a916
 - file: ..\src\config\default\peripheral\clock\plib_clock.c
-  hash: 84b5bbd7ff309e444d71cd549815d4d1a28f00ac1223f52cbc5b1d02f83cb569
+  hash: b3be8ffdb9251fd44e49bd0ef307a0a3e8fd5a2e4d69a57ae9e40e04156b141c
 - file: ..\src\config\default\peripheral\clock\plib_clock.h
   hash: 99bff84fe4a99e6423e2d28f881600300ece34a505bb89f3b4eb61154dbeeb10
 - file: ..\src\config\default\peripheral\eic\plib_eic.c

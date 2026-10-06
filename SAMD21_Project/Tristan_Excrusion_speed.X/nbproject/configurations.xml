@@ -151,6 +151,10 @@
       <itemPath>../src/services/timebase.h</itemPath>
       <itemPath>../src/drivers/encoder.h</itemPath>
       <itemPath>../src/drivers/encoder_core.h</itemPath>
+      <itemPath>../src/services/telemetry.h</itemPath>
+      <itemPath>../src/services/config.h</itemPath>
+      <itemPath>../src/services/log.h</itemPath>
+      <itemPath>../src/services/wdt.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -159,17 +163,17 @@
                      displayName="Tristan_Excrusion_speed_default"
                      projectFiles="true">
         <logicalFolder name="components" displayName="components" projectFiles="true">
-          <itemPath>Tristan_Excrusion_speed_default/components/nvmctrl.yml</itemPath>
-          <itemPath>Tristan_Excrusion_speed_default/components/eic.yml</itemPath>
-          <itemPath>Tristan_Excrusion_speed_default/components/dfp.yml</itemPath>
-          <itemPath>Tristan_Excrusion_speed_default/components/core.yml</itemPath>
-          <itemPath>Tristan_Excrusion_speed_default/components/cmsis.yml</itemPath>
-          <itemPath>Tristan_Excrusion_speed_default/components/stdio.yml</itemPath>
-          <itemPath>Tristan_Excrusion_speed_default/components/sercom1.yml</itemPath>
-          <itemPath>Tristan_Excrusion_speed_default/components/tc3.yml</itemPath>
           <itemPath>Tristan_Excrusion_speed_default/components/evsys.yml</itemPath>
-          <itemPath>Tristan_Excrusion_speed_default/components/BSP_SAM_D21_Curiosity_Nano.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/core.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/tc3.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/dfp.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/cmsis.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/sercom1.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/eic.yml</itemPath>
           <itemPath>Tristan_Excrusion_speed_default/components/sercom5.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/stdio.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/BSP_SAM_D21_Curiosity_Nano.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/nvmctrl.yml</itemPath>
         </logicalFolder>
         <itemPath>Tristan_Excrusion_speed_default/mcc-config.mc4</itemPath>
       </logicalFolder>
@@ -245,6 +249,10 @@
       <itemPath>../src/services/timebase.c</itemPath>
       <itemPath>../src/drivers/encoder_core.c</itemPath>
       <itemPath>../src/drivers/encoder_poll.c</itemPath>
+      <itemPath>../src/services/telemetry.c</itemPath>
+      <itemPath>../src/services/config.c</itemPath>
+      <itemPath>../src/services/log.c</itemPath>
+      <itemPath>../src/services/wdt.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
