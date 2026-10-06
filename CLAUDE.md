@@ -13,9 +13,10 @@ MCC setup is in `SAMD21 Node MCC Harmony 3 Setup Walkthrough.md`.
 - **Last session (2026-10-06):** wrote `services/timebase.c/.h` (TC3 1 ms tick, `timebase_ms()`,
   `timebase_us()` with an overflow-race guard) and turned `app.c` into a non-blocking superloop
   (LED 500 ms, tick line 500 ms, LCD uptime 1 s). Repo created and pushed to GitHub.
-- **Uncommitted:** `services/timebase.*`, `app/app.c`. Ramon commits them after the hardware test.
+- **Uncommitted:** none — tree is clean. `services/timebase.*` and `app/app.c` were committed
+  in `01c83a8` before this session; `timebase.c` is already in the MPLAB project and compiles.
 - **Next steps:**
-  1. Ramon: add `timebase.c` to the MPLAB project, build, flash, verify (see §8), commit.
+  1. Ramon: flash, verify timebase on hardware (see §8).
   2. P1 encoder: propose the file plan (§7) again, wait for OK, then write the code.
 - **Open MCC to-dos (Ramon):** disable the unused GCLK2 (DFLL/24 = 2 MHz, nothing uses it).
 - **Hardware notes:** LCD contrast is best near the end of the pot's travel (normal for 5 V);

@@ -3,11 +3,11 @@
  * Bare-metal superloop: no task ever waits, it only checks the clock.
  * Each task owns a "last run" timestamp; the shared timebase never resets.
  *
- * Current stage: timebase bring-up.
- *   - LED toggles every 500 ms
- *   - every 500 ms: tick counter on LCD row 1 + UART line with ms and the
- *     measured us interval (should read ~500000, a check of timebase_us())
- *   - LCD row 0: uptime hh:mm:ss, compare against a stopwatch
+ * Current stage: P1 encoder bench readout (KY-040 hand knob).
+ *   - LED toggles every 500 ms (alive indicator)
+ *   - encoder_task() runs every pass (debounce + RPM)
+ *   - LCD row 0: count / detents / revs   row 1: rpm / dir / button events
+ *   - UART: one dump line at ~10 Hz with every value, for the acceptance tests
  */
 #include <stdio.h>
 #include "definitions.h"
@@ -15,65 +15,81 @@
 #include "services/delay.h"
 #include "services/timebase.h"
 #include "drivers/lcd_hd44780.h"
+#include "drivers/encoder.h"
 
 #define LED_PERIOD_MS       500U
-#define TICK_PERIOD_MS      500U
-#define UPTIME_PERIOD_MS    1000U
+#define LCD_PERIOD_MS       100U     /* readable, no flicker (overwrite+pad) */
+#define UART_PERIOD_MS      100U     /* ~10 Hz, same cadence as future JSON */
+
+static char dir_char(int8_t d)
+{
+    return (d > 0) ? '+' : (d < 0) ? '-' : '0';
+}
 
 void app_run(void)
 {
     char line[LCD_COLS + 1U];
-    uint32_t n = 0U;
 
     delay_init();
     timebase_init();
     lcd_init();
-    printf("\r\nTimebase test\r\n");
+    encoder_init();                 /* after timebase: edges stamp with us */
+    printf("\r\nP1 encoder bench\r\n");
 
-    uint32_t now      = timebase_ms();
-    uint32_t t_led    = now;
-    uint32_t t_tick   = now;
-    uint32_t t_uptime = now - UPTIME_PERIOD_MS;   /* draw row 0 immediately */
-    uint32_t us_prev  = timebase_us();
+    uint32_t now   = timebase_ms();
+    uint32_t t_led = now;
+    uint32_t t_lcd = now;
+    uint32_t t_uart = now;
 
     for (;;)
     {
         now = timebase_ms();
 
-        /* += keeps the schedule anchored: a late run doesn't push later ones. */
+        encoder_task();             /* cheap, self-rate-limiting */
+
         if ((now - t_led) >= LED_PERIOD_MS)
         {
             t_led += LED_PERIOD_MS;
             LED0_Toggle();
         }
 
-        if ((now - t_tick) >= TICK_PERIOD_MS)
+        if ((now - t_lcd) >= LCD_PERIOD_MS)
         {
-            t_tick += TICK_PERIOD_MS;
+            t_lcd += LCD_PERIOD_MS;
 
-            uint32_t us_now = timebase_us();
-            printf("tick %lu  ms=%lu  dus=%lu\r\n",
-                   (unsigned long)n, (unsigned long)now,
-                   (unsigned long)(us_now - us_prev));
-            us_prev = us_now;
+            int32_t  cnt = encoder_get_count();
+            int32_t  det = encoder_get_detents();
+            int32_t  rev = encoder_get_revolutions();
+            uint32_t r10 = encoder_get_rpm_x10();
 
-            (void)snprintf(line, sizeof line, "tick %lu", (unsigned long)n);
-            lcd_write_line(1U, line);
-            n++;
-        }
-
-        if ((now - t_uptime) >= UPTIME_PERIOD_MS)
-        {
-            t_uptime += UPTIME_PERIOD_MS;
-
-            uint32_t s = now / 1000U;
-            (void)snprintf(line, sizeof line, "up %02lu:%02lu:%02lu",
-                           (unsigned long)(s / 3600U),
-                           (unsigned long)((s / 60U) % 60U),
-                           (unsigned long)(s % 60U));
+            (void)snprintf(line, sizeof line, "C%ld D%ld R%ld",
+                           (long)cnt, (long)det, (long)rev);
             lcd_write_line(0U, line);
+
+            (void)snprintf(line, sizeof line, "rpm%lu.%lu %c ev%lu",
+                           (unsigned long)(r10 / 10U),
+                           (unsigned long)(r10 % 10U),
+                           dir_char(encoder_get_direction()),
+                           (unsigned long)encoder_get_button_events());
+            lcd_write_line(1U, line);
         }
 
-        /* future: encoder_task(); telemetry_task(); -- run every pass */
+        if ((now - t_uart) >= UART_PERIOD_MS)
+        {
+            t_uart += UART_PERIOD_MS;
+
+            uint32_t r10 = encoder_get_rpm_x10();
+            printf("count=%ld det=%ld rev=%ld dir=%d rpm=%lu.%lu "
+                   "btn=%d ev=%lu inval=%lu\r\n",
+                   (long)encoder_get_count(),
+                   (long)encoder_get_detents(),
+                   (long)encoder_get_revolutions(),
+                   (int)encoder_get_direction(),
+                   (unsigned long)(r10 / 10U),
+                   (unsigned long)(r10 % 10U),
+                   (int)encoder_get_button(),
+                   (unsigned long)encoder_get_button_events(),
+                   (unsigned long)encoder_get_invalid_count());
+        }
     }
 }

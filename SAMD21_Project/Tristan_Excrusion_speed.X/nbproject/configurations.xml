@@ -149,6 +149,8 @@
       <itemPath>../src/drivers/lcd_hd44780.h</itemPath>
       <itemPath>../src/app/app.h</itemPath>
       <itemPath>../src/services/timebase.h</itemPath>
+      <itemPath>../src/drivers/encoder.h</itemPath>
+      <itemPath>../src/drivers/encoder_core.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -241,6 +243,8 @@
       <itemPath>../src/drivers/lcd_hd44780.c</itemPath>
       <itemPath>../src/services/delay.c</itemPath>
       <itemPath>../src/services/timebase.c</itemPath>
+      <itemPath>../src/drivers/encoder_core.c</itemPath>
+      <itemPath>../src/drivers/encoder_poll.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
