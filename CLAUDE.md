@@ -10,18 +10,19 @@ MCC setup is in `SAMD21 Node MCC Harmony 3 Setup Walkthrough.md`.
 ## 1. Current state  ← update this section at the end of every session
 
 - **Phase:** P0 ✅ · P2a LCD ✅ · timebase ✅ (tested) · **P1 encoder ✅ (tested on KY-040)** ·
-  telemetry ✅ · robustness nice-to-haves (WDT, non-blocking log, config, speed_ft_s) ✅ (tested).
-  **Next: Unity host tests, then P3 Ethernet.**
-- **Last session (2026-10-06):** wrote the P1 encoder (3-layer backend-agnostic design, committed
-  `4646546`), then telemetry + 4 robustness pieces (uncommitted, see below). All compile via the
-  command-line build (§4) and were flashed + verified on hardware by Ramon.
-- **Uncommitted (ready to commit — tested):** `services/{config,log,wdt,telemetry}.*`, `app/app.c`,
-  plus MCC-generated WDT changes (`config/default/initialization.c` fuses, `plib_clock.c` GCLK2→WDT,
-  and the project/MCC config files). All added to the MPLAB project.
+  telemetry ✅ · robustness nice-to-haves (WDT, non-blocking log, config, speed_ft_s) ✅ (tested) ·
+  **Unity host tests ✅ (10/10 pass on PC)**. **Next: P3 Ethernet.**
+- **Last session (2026-10-07):** wrote + ran the Unity host tests for `encoder_core` (10 cases,
+  all pass on the PC). Telemetry + robustness from 2026-10-06 are now committed (`8f21a6a`).
+  Installed MinGW-w64 gcc (winget) since the machine had no host compiler — only ARM `xc32-gcc`.
+- **Uncommitted (ready to commit — tested):** `SAMD21_Project/tests/` — `test_encoder_core.c`,
+  `Makefile`, vendored `unity/` (Unity 2.6.0, MIT). Not part of the MPLAB build; host-only.
 - **Next steps:**
-  1. **Unity host tests** (tomorrow): quadrature table, floor-div, RPM-timeout, button debounce —
-     the §7 acceptance tests, run on the PC (gcc + Unity in `SAMD21_Project/tests/`). Pure-logic only.
-  2. Then **P3 Ethernet**: W5500 bring-up, ioLibrary_Driver as a git submodule, VERSIONR==0x04, Pi ping.
+  1. **P3 Ethernet**: W5500 bring-up, ioLibrary_Driver as a git submodule, VERSIONR==0x04, Pi ping.
+  2. Optional: P1b TC4/EVSYS capture; nicer P2 LCD layout.
+- **How to run the host tests:** `cd SAMD21_Project/tests && make` (needs gcc on PATH). gcc is at
+  `…/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_*/mingw64/bin`;
+  a fresh shell picks it up, else prepend that bin to PATH (same pattern as the §4 XC32 build).
 - **Open MCC to-dos (Ramon):** none outstanding — GCLK2 is now repurposed to clock the WDT.
 - **Hardware notes:** KY-040 is mechanically bouncy — `invalid` counter climbs and counts drift
   slightly; this is the cheap knob, not the firmware (the production optical encoder won't do it).
@@ -137,6 +138,7 @@ off). No WDT PLIB in this CSP — `services/wdt.c` kicks it with a direct CLEAR-
 | FEET_PER_REV is calibrated on the machine, stored in NVM (P5) | The chain drives an unknown downstream geometry; the sprocket formula is only an estimate. |
 | Repo outside OneDrive; GitHub private (Rrodriguez-microchip/encoder-telemetry-node) | OneDrive and `.git` conflict. |
 | Encoder is a 3-layer split: `encoder.h` API / `encoder_core` pure logic / per-sensor backend | Swapping KY-040 → optical encoder is one new backend file; API, core, telemetry, app unchanged. |
+| Unity vendored (3 files) under `tests/unity/`, not a submodule; host tests via plain gcc Makefile | 3 MIT files, network-free build, lighter than a submodule. Host compiler = MinGW-w64 (winget); only `xc32-gcc` (ARM) was present. |
 | Two backends: `encoder_poll.c` (knob) and `encoder_eic.c` (optical), one in the build at a time | Mechanical KY-040 bounces for ms; 1 ms polling beats edge interrupts for it. Optical needs interrupts (16.8k edges/s). |
 | Core recovers a skipped quadrature state as ±2 in the last direction (not drop) | Dropping a both-bits-changed transition loses counts and drifts. Shaft really moved 2; only a reversal exactly on a skip errs, and self-corrects. |
 | rpm as integer ×10, speed as milli-ft/s; conversion in telemetry not encoder | No %f (XC32 float lib). `ft_s = rpm/60 × feet_per_rev`; feet_per_rev lives in `config` (→ NVM in P5), not the sensor driver. |
