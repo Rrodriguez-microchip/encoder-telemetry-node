@@ -12,6 +12,10 @@
                 <sourceRootElem>../src/app</sourceRootElem>
                 <sourceRootElem>../src/drivers</sourceRootElem>
                 <sourceRootElem>../src/services</sourceRootElem>
+                <sourceRootElem>../src/drivers/ioLibrary_Driver/Ethernet</sourceRootElem>
+                <sourceRootElem>../src/drivers/ioLibrary_Driver</sourceRootElem>
+                <sourceRootElem>../src/drivers/ioLibrary_Driver/Internet/MQTT</sourceRootElem>
+                <sourceRootElem>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

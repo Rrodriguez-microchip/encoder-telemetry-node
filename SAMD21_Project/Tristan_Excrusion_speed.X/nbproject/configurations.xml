@@ -145,6 +145,15 @@
           </logicalFolder>
         </logicalFolder>
       </logicalFolder>
+      <logicalFolder name="src" displayName="src" projectFiles="true">
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTConnect.h</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTFormat.h</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTPacket.h</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTPublish.h</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTSubscribe.h</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTUnsubscribe.h</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/StackTrace.h</itemPath>
+      </logicalFolder>
       <itemPath>../src/services/delay.h</itemPath>
       <itemPath>../src/drivers/lcd_hd44780.h</itemPath>
       <itemPath>../src/app/app.h</itemPath>
@@ -155,6 +164,12 @@
       <itemPath>../src/services/config.h</itemPath>
       <itemPath>../src/services/log.h</itemPath>
       <itemPath>../src/services/wdt.h</itemPath>
+      <itemPath>../src/drivers/w5500_port.h</itemPath>
+      <itemPath>../src/drivers/ioLibrary_Driver/Ethernet/wizchip_conf.h</itemPath>
+      <itemPath>../src/drivers/ioLibrary_Driver/Ethernet/W5500/w5500.h</itemPath>
+      <itemPath>../src/drivers/ioLibrary_Driver/Ethernet/socket.h</itemPath>
+      <itemPath>../src/services/net_mqtt.h</itemPath>
+      <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/mqtt_interface.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -242,6 +257,18 @@
           <itemPath>../src/config/default/libc_syscalls.c</itemPath>
         </logicalFolder>
       </logicalFolder>
+      <logicalFolder name="src" displayName="src" projectFiles="true">
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTConnectClient.c</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTConnectServer.c</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTDeserializePublish.c</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTFormat.c</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTPacket.c</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTSerializePublish.c</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTSubscribeClient.c</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTSubscribeServer.c</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTUnsubscribeClient.c</itemPath>
+        <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src/MQTTUnsubscribeServer.c</itemPath>
+      </logicalFolder>
       <itemPath>../src/main.c</itemPath>
       <itemPath>../src/app/app.c</itemPath>
       <itemPath>../src/drivers/lcd_hd44780.c</itemPath>
@@ -253,12 +280,23 @@
       <itemPath>../src/services/config.c</itemPath>
       <itemPath>../src/services/log.c</itemPath>
       <itemPath>../src/services/wdt.c</itemPath>
+      <itemPath>../src/drivers/w5500_port.c</itemPath>
+      <itemPath>../src/drivers/ioLibrary_Driver/Ethernet/wizchip_conf.c</itemPath>
+      <itemPath>../src/drivers/ioLibrary_Driver/Ethernet/W5500/w5500.c</itemPath>
+      <itemPath>../src/drivers/ioLibrary_Driver/Ethernet/socket.c</itemPath>
+      <itemPath>../src/services/net_mqtt.c</itemPath>
+      <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/mqtt_interface.c</itemPath>
+      <itemPath>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTClient.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
     <Elem>../src/app</Elem>
     <Elem>../src/drivers</Elem>
     <Elem>../src/services</Elem>
+    <Elem>../src/drivers/ioLibrary_Driver/Ethernet</Elem>
+    <Elem>../src/drivers/ioLibrary_Driver</Elem>
+    <Elem>../src/drivers/ioLibrary_Driver/Internet/MQTT</Elem>
+    <Elem>../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -307,7 +345,6 @@
       <C32>
         <property key="additional-warnings" value="false"/>
         <property key="addresss-attribute-use" value="false"/>
-        <property key="appendMe" value=""/>
         <property key="cast-align" value="false"/>
         <property key="code-model" value="default"/>
         <property key="const-model" value="default"/>
@@ -322,7 +359,7 @@
         <property key="exclude-floating-point" value="false"/>
         <property key="expand-pragma-config" value="false"/>
         <property key="extra-include-directories"
-                  value="../src;../src/config/default;../src/packs/ATSAMD21G17D_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include"/>
+                  value="../src;../src/config/default;../src/packs/ATSAMD21G17D_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include;../src/drivers/ioLibrary_Driver/Internet/MQTT;../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src;..\src\drivers\ioLibrary_Driver;..\src\drivers\ioLibrary_Driver\Ethernet"/>
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
         <property key="isolate-each-function" value="true"/>
@@ -341,7 +378,7 @@
         <property key="place-data-into-section" value="true"/>
         <property key="post-instruction-scheduling" value="default"/>
         <property key="pre-instruction-scheduling" value="default"/>
-        <property key="preprocessor-macros" value=""/>
+        <property key="preprocessor-macros" value="_WIZCHIP_=W5500"/>
         <property key="scalar-model" value="default"/>
         <property key="strict-ansi" value="false"/>
         <property key="support-ansi" value="false"/>
@@ -386,7 +423,6 @@
         <property key="additional-options-use-response-files" value="false"/>
         <property key="additional-options-write-sla" value="false"/>
         <property key="allocate-dinit" value="false"/>
-        <property key="appendMe" value=""/>
         <property key="code-dinit" value="false"/>
         <property key="ebase-addr" value=""/>
         <property key="enable-check-sections" value="false"/>
@@ -432,7 +468,6 @@
       <C32CPP>
         <property key="additional-warnings" value="false"/>
         <property key="addresss-attribute-use" value="false"/>
-        <property key="appendMe" value=""/>
         <property key="check-new" value="false"/>
         <property key="eh-specs" value="true"/>
         <property key="enable-app-io" value="false"/>
@@ -480,6 +515,122 @@
         <property key="stack-smashing" value=""/>
         <property key="wpo-lto" value="false"/>
       </C32Global>
+      <Tool>
+        <property key="AutoSelectMemRanges" value="auto"/>
+        <property key="arm.use_vtor" value="false"/>
+        <property key="arm.vtor_adr" value="exception_table"/>
+        <property key="communication.activationmode" value="nohv"/>
+        <property key="communication.interface" value="swd"/>
+        <property key="communication.speed" value="2.000"/>
+        <property key="debugoptions.debug-startup" value="Use system settings"/>
+        <property key="debugoptions.reset-behaviour" value="Use system settings"/>
+        <property key="debugoptions.useswbreakpoints" value="false"/>
+        <property key="event.recorder.debugger.behavior" value="Running"/>
+        <property key="event.recorder.enabled" value="false"/>
+        <property key="event.recorder.scvd.files" value=""/>
+        <property key="firmware.path"
+                  value="Press to browse for a specific firmware version"/>
+        <property key="firmware.toolpack"
+                  value="Press to select which tool pack to use"/>
+        <property key="firmware.update.action" value="firmware.update.use.latest"/>
+        <property key="freeze.timers" value="false"/>
+        <property key="lastid" value=""/>
+        <property key="loader.board_file" value="${ProjectDir}/board.xboard"/>
+        <property key="memories.aux" value="false"/>
+        <property key="memories.bootflash" value="true"/>
+        <property key="memories.configurationmemory" value="true"/>
+        <property key="memories.configurationmemory2" value="true"/>
+        <property key="memories.dataflash" value="true"/>
+        <property key="memories.eeprom" value="true"/>
+        <property key="memories.exclude.configurationmemory" value="true"/>
+        <property key="memories.flashdata" value="true"/>
+        <property key="memories.id" value="true"/>
+        <property key="memories.instruction.ram.ranges"
+                  value="${memories.instruction.ram.ranges}"/>
+        <property key="memories.programmemory" value="true"/>
+        <property key="memories.programmemory.ranges" value="0-1ffff"/>
+        <property key="poweroptions.powerenable" value="false"/>
+        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="programoptions.preservedataflash" value="false"/>
+        <property key="programoptions.preservedataflash.ranges"
+                  value="${memories.dataflash.default}"/>
+        <property key="programoptions.preserveeeprom" value="false"/>
+        <property key="programoptions.preserveeeprom.ranges" value=""/>
+        <property key="programoptions.preserveprogram.ranges" value=""/>
+        <property key="programoptions.preserveprogramrange" value="false"/>
+        <property key="programoptions.preserveuserid" value="false"/>
+        <property key="programoptions.programuserotp" value="false"/>
+        <property key="programoptions.smart.program" value="When debugging only"/>
+        <property key="script.has_reset" value="true"/>
+        <property key="script.log_level" value="1"/>
+        <property key="script.reset_delay" value="0"/>
+        <property key="script.show_output" value="false"/>
+        <property key="toolpack.updateoptions"
+                  value="toolpack.updateoptions.uselatestoolpack"/>
+        <property key="toolpack.updateoptions.packversion"
+                  value="Press to select which tool pack to use"/>
+        <property key="voltagevalue" value=""/>
+        <property key="x.erase.clearprot" value="true"/>
+      </Tool>
+      <nEdbgTool>
+        <property key="AutoSelectMemRanges" value="auto"/>
+        <property key="arm.use_vtor" value="false"/>
+        <property key="arm.vtor_adr" value="exception_table"/>
+        <property key="communication.activationmode" value="nohv"/>
+        <property key="communication.interface" value="swd"/>
+        <property key="communication.speed" value="2.000"/>
+        <property key="debugoptions.debug-startup" value="Use system settings"/>
+        <property key="debugoptions.reset-behaviour" value="Use system settings"/>
+        <property key="debugoptions.useswbreakpoints" value="false"/>
+        <property key="event.recorder.debugger.behavior" value="Running"/>
+        <property key="event.recorder.enabled" value="false"/>
+        <property key="event.recorder.scvd.files" value=""/>
+        <property key="firmware.path"
+                  value="Press to browse for a specific firmware version"/>
+        <property key="firmware.toolpack"
+                  value="Press to select which tool pack to use"/>
+        <property key="firmware.update.action" value="firmware.update.use.latest"/>
+        <property key="freeze.timers" value="false"/>
+        <property key="lastid" value=""/>
+        <property key="loader.board_file" value="${ProjectDir}/board.xboard"/>
+        <property key="memories.aux" value="false"/>
+        <property key="memories.bootflash" value="true"/>
+        <property key="memories.configurationmemory" value="true"/>
+        <property key="memories.configurationmemory2" value="true"/>
+        <property key="memories.dataflash" value="true"/>
+        <property key="memories.eeprom" value="true"/>
+        <property key="memories.exclude.configurationmemory" value="true"/>
+        <property key="memories.flashdata" value="true"/>
+        <property key="memories.id" value="true"/>
+        <property key="memories.instruction.ram.ranges"
+                  value="${memories.instruction.ram.ranges}"/>
+        <property key="memories.programmemory" value="true"/>
+        <property key="memories.programmemory.ranges" value="0-1ffff"/>
+        <property key="poweroptions.powerenable" value="false"/>
+        <property key="programmerToGoFilePath"
+                  value="C:/Projects/Tristan&apos;s project/SAMD21_Project/Tristan_Excrusion_speed.X/debug/default/Tristan_Excrusion_speed_ptg"/>
+        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="programoptions.preservedataflash" value="false"/>
+        <property key="programoptions.preservedataflash.ranges"
+                  value="${memories.dataflash.default}"/>
+        <property key="programoptions.preserveeeprom" value="false"/>
+        <property key="programoptions.preserveeeprom.ranges" value=""/>
+        <property key="programoptions.preserveprogram.ranges" value=""/>
+        <property key="programoptions.preserveprogramrange" value="false"/>
+        <property key="programoptions.preserveuserid" value="false"/>
+        <property key="programoptions.programuserotp" value="false"/>
+        <property key="programoptions.smart.program" value="When debugging only"/>
+        <property key="script.has_reset" value="true"/>
+        <property key="script.log_level" value="1"/>
+        <property key="script.reset_delay" value="0"/>
+        <property key="script.show_output" value="false"/>
+        <property key="toolpack.updateoptions"
+                  value="toolpack.updateoptions.uselatestoolpack"/>
+        <property key="toolpack.updateoptions.packversion"
+                  value="Press to select which tool pack to use"/>
+        <property key="voltagevalue" value=""/>
+        <property key="x.erase.clearprot" value="true"/>
+      </nEdbgTool>
     </conf>
   </confs>
 </configurationDescriptor>
