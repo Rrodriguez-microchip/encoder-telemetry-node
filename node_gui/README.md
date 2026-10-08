@@ -75,24 +75,50 @@ pip install -r requirements.txt
 python3 main.py
 ```
 
-If you run the GUI **on the Pi that also runs Mosquitto**, the default
-`BROKER_HOST = "localhost"` in `config.py` is correct. If you run it on a
-**Windows machine on the same LAN**, change `BROKER_HOST` to the Pi's IP
-(the firmware uses `192.168.1.5`).
+### Pointing it at the right broker
+
+**The normal way — the Settings button (no terminal, no files).**
+Launch the app and click **Settings**. Type the broker's IP/host (and the area
+/ node you want to watch), click **Save**. The app reconnects immediately and
+remembers the values for next time (written to `settings.json` next to the app).
+
+- On the Pi that also runs Mosquitto, the default `localhost` already works —
+  you may never need the dialog.
+- On a Windows/other machine, open Settings once and enter the Pi's IP
+  (`hostname -I` on the Pi gives it). Done.
+
+**Developer shortcut — environment variables (optional).**
+For quick testing you can override without the dialog; these win over the saved
+file:
+
+```bat
+:: Windows cmd
+set NODE_GUI_BROKER=192.168.50.64
+python main.py
+```
+```bash
+# Linux / macOS / Pi
+export NODE_GUI_BROKER=192.168.50.64
+python3 main.py
+```
+
+`settings.json` is git-ignored, so a machine's own IP never gets committed.
 
 ---
 
 ## Configuration
 
-All knobs live in `config.py`:
+All knobs live in `config.py`. The per-machine ones can be overridden by an
+environment variable (shown in brackets) so you don't edit the committed file:
 
-| Setting | Meaning |
-|---|---|
-| `BROKER_HOST` / `BROKER_PORT` | where Mosquitto is (`localhost` on the Pi, else its IP) |
-| `AREA` / `NODE_ID` | which node to watch; builds the topic strings |
-| `FEET_PER_REV` | feet per shaft rev for "total extruded" — **must match firmware config.c** |
-| `UI_REFRESH_MS` | how often the window redraws (default 250 ms) |
-| `STALE_AFTER_S` | seconds of telemetry silence before the amber "stale" state |
+| Setting | Env var | Meaning |
+|---|---|---|
+| `BROKER_HOST` | `NODE_GUI_BROKER` | where Mosquitto is (`localhost` on the Pi, else its IP) |
+| `BROKER_PORT` | `NODE_GUI_PORT` | broker port (default 1883) |
+| `AREA` / `NODE_ID` | `NODE_GUI_AREA` / `NODE_GUI_NODE_ID` | which node to watch; builds the topic strings |
+| `FEET_PER_REV` | — | feet per shaft rev for "total extruded" — **must match firmware config.c** |
+| `UI_REFRESH_MS` | — | how often the window redraws (default 250 ms) |
+| `STALE_AFTER_S` | — | seconds of telemetry silence before the amber "stale" state |
 
 These must match the firmware's `config.c` (`AREA`/`NODE_ID`) for the topics to
 line up.

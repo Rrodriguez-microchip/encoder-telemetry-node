@@ -1,0 +1,11 @@
+# Per-machine runtime settings written by the Settings dialog. Holds this
+# machine's broker IP / node choice -- must NOT be committed (wrong for the Pi,
+# wrong for the next network). The committed defaults live in config.py.
+settings.json
+
+# Python virtual environment (each machine builds its own; see README).
+.venv/
+
+# Python bytecode cache.
+__pycache__/
+*.pyc

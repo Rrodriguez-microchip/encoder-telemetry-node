@@ -83,6 +83,26 @@ class TelemetryModel:
         with self._lock:
             self.online = online
 
+    def reset_for_new_node(self) -> None:
+        """Clear all readings when the dashboard is re-pointed at another node.
+
+        The old count/rpm/tare belong to the previous node, so showing them
+        against the new one would be misleading. Blank everything and drop the
+        tare baseline; the first sample from the new node re-tares. Called from
+        the UI thread when the Settings dialog switches area/node_id.
+        """
+        with self._lock:
+            self.count = 0
+            self.detents = 0
+            self.revolutions = 0
+            self.direction = 0
+            self.rpm = 0.0
+            self.ft_s = 0.0
+            self.button = 0
+            self.online = False
+            self.last_telemetry_ts = 0.0
+            self._rev_baseline = None
+
     def set_broker_connected(self, connected: bool) -> None:
         """Record whether our own MQTT connection is up."""
         with self._lock:

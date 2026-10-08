@@ -4,24 +4,41 @@ One place to edit the connection details so the rest of the app never
 hard-codes them. These must match the firmware (see CLAUDE.md §5 pin map and
 the net_mqtt.c / config.c defaults):
 
-    broker IP/port .......... 192.168.1.5 : 1883   (the Pi running Mosquitto)
     topics .................. bldg/<AREA>/<NODE_ID>/telemetry
                               bldg/<AREA>/<NODE_ID>/status
 
-Later this could be loaded from a file or a settings screen; for v1 it lives
-here as plain module-level values you edit by hand.
+Per-machine values (where the broker is, which node to watch) are read from
+environment variables, with sensible defaults baked in. This is why the
+committed file never needs editing per machine:
+
+  - On the Pi (broker is local), the defaults just work -- run it as-is.
+  - On a Windows/other machine on the LAN, set the broker to the Pi's IP ONCE
+    in your shell instead of editing this file:
+
+        Windows (PowerShell):  $env:NODE_GUI_BROKER = "192.168.50.64"
+        Windows (cmd):         set NODE_GUI_BROKER=192.168.50.64
+        Linux/macOS/Pi:        export NODE_GUI_BROKER=192.168.50.64
+
+    then run `python main.py`. The IP stays out of version control, so the
+    repo stays correct for every machine and every network.
+
+Supported env vars: NODE_GUI_BROKER, NODE_GUI_PORT, NODE_GUI_AREA,
+NODE_GUI_NODE_ID.
 """
 
+import os
+
 # --- MQTT broker (the Raspberry Pi running Mosquitto) ----------------------
-# On the Pi itself, "localhost" works. From a Windows machine on the same LAN,
-# use the Pi's IP (the firmware's broker IP is 192.168.1.5).
-BROKER_HOST = "localhost"
-BROKER_PORT = 1883
+# Default "localhost" is correct when the GUI runs ON the Pi. From another
+# machine, set NODE_GUI_BROKER to the Pi's IP (see the module docstring) rather
+# than editing this line, so the per-machine IP never gets committed.
+BROKER_HOST = os.environ.get("NODE_GUI_BROKER", "localhost")
+BROKER_PORT = int(os.environ.get("NODE_GUI_PORT", "1883"))
 
 # --- Which node this dashboard watches -------------------------------------
 # These build the topic strings and must match the firmware's config.c.
-AREA = "extrusion"
-NODE_ID = "node01"
+AREA = os.environ.get("NODE_GUI_AREA", "extrusion")
+NODE_ID = os.environ.get("NODE_GUI_NODE_ID", "node01")
 
 # --- Derived topics (don't edit; built from the values above) --------------
 TELEMETRY_TOPIC = f"bldg/{AREA}/{NODE_ID}/telemetry"

@@ -14,22 +14,34 @@ the (thread-safe) model, and the UI polls the model on Tkinter's own loop via
 import tkinter as tk
 
 import config
+import settings_store
 from telemetry_model import TelemetryModel
 from ui.widgets import ValueTile, StatusLight
+from ui.settings_dialog import SettingsDialog
 
 
 class MainWindow:
     """Builds and runs the dashboard for one node."""
 
-    def __init__(self, root: tk.Tk, model: TelemetryModel):
+    def __init__(self, root: tk.Tk, model: TelemetryModel, on_settings_saved):
         self._root = root
         self._model = model
+        self._on_settings_saved = on_settings_saved
 
-        root.title(f"Extrusion Node — {config.AREA}/{config.NODE_ID}")
-        root.minsize(560, 320)
+        # Current settings, so the Settings dialog opens pre-filled and the
+        # header shows the right node. Updated when the user saves.
+        self._settings = settings_store.load()
+
+        root.minsize(560, 340)
+        self._apply_title()
 
         self._build_header()
         self._build_tiles()
+
+    def _apply_title(self) -> None:
+        self._root.title(
+            f"Extrusion Node — {self._settings['area']}/{self._settings['node_id']}"
+        )
 
     # --- layout ------------------------------------------------------------
 
@@ -38,11 +50,12 @@ class MainWindow:
         header = tk.Frame(self._root, pady=6)
         header.pack(fill=tk.X)
 
-        tk.Label(
+        self._header_label = tk.Label(
             header,
-            text=f"{config.AREA} / {config.NODE_ID}",
+            text=f"{self._settings['area']} / {self._settings['node_id']}",
             font=("Segoe UI", 14, "bold"),
-        ).pack(side=tk.LEFT, padx=12)
+        )
+        self._header_label.pack(side=tk.LEFT, padx=12)
 
         self._status = StatusLight(header)
         self._status.pack(side=tk.RIGHT)
@@ -71,12 +84,28 @@ class MainWindow:
         self._tile_rev.grid(row=1, column=1, sticky="nsew")
         self._tile_total.grid(row=1, column=2, sticky="nsew")
 
-        # Reset tares the "total extruded" reading (GUI-only; node untouched).
+        # Footer: Reset tares the total (GUI-only); Settings opens the dialog.
         footer = tk.Frame(self._root, pady=6)
         footer.pack(fill=tk.X)
         tk.Button(
             footer, text="Reset total", command=self._model.reset_total
         ).pack(side=tk.RIGHT, padx=12)
+        tk.Button(
+            footer, text="Settings", command=self._open_settings
+        ).pack(side=tk.RIGHT)
+
+    def _open_settings(self) -> None:
+        """Open the modal Settings dialog, pre-filled with current values."""
+        SettingsDialog(self._root, self._settings, on_save=self._settings_saved)
+
+    def _settings_saved(self, new_settings: dict) -> None:
+        """Apply saved settings: update our copy, title/header, then notify app."""
+        self._settings = new_settings
+        self._apply_title()
+        self._header_label.config(
+            text=f"{new_settings['area']} / {new_settings['node_id']}"
+        )
+        self._on_settings_saved(new_settings)
 
     # --- periodic redraw ---------------------------------------------------
 
