@@ -6,6 +6,7 @@
  */
 #include "services/timebase.h"
 #include "definitions.h"
+#include "mqtt_interface.h"     /* MilliTimer_Handler: the MQTT lib's 1 ms tick */
 
 #define TC3_COUNTS_PER_US   (CPU_CLOCK_FREQUENCY / 1000000U)   /* 48 */
 
@@ -17,6 +18,7 @@ static void timebase_tick_isr(TC_TIMER_STATUS status, uintptr_t context)
     (void)status;
     (void)context;
     s_ms++;
+    MilliTimer_Handler();       /* drives the MQTT client's countdown timers */
 }
 
 void timebase_init(void)

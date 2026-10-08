@@ -18,7 +18,9 @@
 #include "services/timebase.h"
 #include "drivers/lcd_hd44780.h"
 #include "drivers/encoder.h"
+#include "drivers/w5500_port.h"
 #include "services/telemetry.h"
+#include "services/net_mqtt.h"
 #include "services/wdt.h"
 
 #define LED_PERIOD_MS       500U
@@ -40,6 +42,31 @@ void app_run(void)
     wdt_init();                     /* start the watchdog; kicked every pass */
     printf("\r\nP1 encoder bench\r\n");
 
+    /* P3 Ethernet bring-up (milestone 1): reset the W5500 and read VERSIONR.
+     * A healthy chip always returns 0x04 -- that single byte proves the SPI
+     * wiring, clock and chip are good. Then load the static IP so the Pi can
+     * ping us (milestone 2). One-shot at startup; no superloop task yet. */
+    if (w5500_port_init())
+    {
+        uint8_t ver = w5500_version();
+        printf("W5500 VERSIONR = 0x%02X (expect 0x04)\r\n", ver);
+        if (ver == 0x04U)
+        {
+            printf("W5500 net up: %s\r\n", w5500_net_up() ? "ok" : "FAILED");
+
+            /* P4: MQTT connect is NOT done here. A blocking connect in init
+             * runs before the superloop, so the WDT (~1.9 s) isn't petted --
+             * an unreachable broker would reset the node in a loop. Instead
+             * net_mqtt_task() connects lazily from inside the loop and retries
+             * forever, so the node tolerates a broker that's down at boot or
+             * that comes and goes. */
+        }
+    }
+    else
+    {
+        printf("W5500 init FAILED\r\n");
+    }
+
     uint32_t now   = timebase_ms();
     uint32_t t_led = now;
     uint32_t t_lcd = now;
@@ -51,6 +78,7 @@ void app_run(void)
         wdt_kick();                 /* pet the dog: loop is alive */
         encoder_task();             /* cheap, self-rate-limiting */
         telemetry_task();           /* ~10 Hz JSON over UART, non-blocking */
+        net_mqtt_task();            /* ~1 Hz JSON over MQTT (no-op if down) */
 
         if ((now - t_led) >= LED_PERIOD_MS)
         {

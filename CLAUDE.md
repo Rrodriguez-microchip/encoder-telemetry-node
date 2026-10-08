@@ -11,23 +11,62 @@ MCC setup is in `SAMD21 Node MCC Harmony 3 Setup Walkthrough.md`.
 
 - **Phase:** P0 ✅ · P2a LCD ✅ · timebase ✅ (tested) · **P1 encoder ✅ (tested on KY-040)** ·
   telemetry ✅ · robustness nice-to-haves (WDT, non-blocking log, config, speed_ft_s) ✅ (tested) ·
-  **Unity host tests ✅ (10/10 pass on PC)**. **Next: P3 Ethernet.**
-- **Last session (2026-10-07):** wrote + ran the Unity host tests for `encoder_core` (10 cases,
-  all pass on the PC). Telemetry + robustness from 2026-10-06 are now committed (`8f21a6a`).
-  Installed MinGW-w64 gcc (winget) since the machine had no host compiler — only ARM `xc32-gcc`.
-- **Uncommitted (ready to commit — tested):** `SAMD21_Project/tests/` — `test_encoder_core.c`,
-  `Makefile`, vendored `unity/` (Unity 2.6.0, MIT). Not part of the MPLAB build; host-only.
+  **Unity host tests ✅ (10/10 pass on PC)** · **P3 Ethernet ✅ (VERSIONR=0x04, Pi ping 0% loss)** ·
+  **P4 MQTT telemetry ✅ (VERIFIED on HW — live publish on the Pi, values track the knob)**.
+  **Next: P4 step 2 — retained /status + last-will "offline".**
+- **Last session (2026-10-08):** flashed & verified P4 on HW. Hit a WDT reset loop first
+  (banner reprinting every ~2 s): the blocking `net_mqtt_connect()` ran in init *before* the
+  superloop, so the WDT (~1.9 s) was never petted while `connect()` spun on the TCP handshake.
+  Fixed by (a) `setRTR(2000)/setRCR(3)` in `w5500_net_up()` so a failed connect times out in
+  ~0.8 s (default ~1.8 s was right at the WDT edge); (b) removing the connect from `app.c` init;
+  (c) `net_mqtt_task()` now connects lazily inside the loop and retries every 3 s while down.
+  Net: the node runs encoder/LCD/UART regardless of the network and auto-(re)connects whenever
+  the broker is reachable — tolerates a broker that's off at boot or comes and goes. After the
+  fix: `mosquitto_sub` on the Pi showed `bldg/extrusion/node01/telemetry {...}` ~1 Hz, values
+  tracking the knob. Mosquitto confirmed `LISTEN 0.0.0.0:1883`. Pi 4 (Debian, user `ramon`,
+  host `Test`) on SSH over LAN.
+- **LCD gotcha (cost an hour):** 1602A VDD must be **5 V**, not 3.3 V. On 3.3 V it rendered
+  faintly/intermittently (looked like a contrast problem); the real issue is the 5 V HD44780's
+  V_IH. 5 V VDD → crisp. Node logic lines are 3.3 V and clear the 5 V panel's input threshold
+  fine; it's VDD that must be 5 V.
+- **Committed:** `tests/` Unity suite (`6b13534`, local only — the earlier push to GitHub hit a
+  transient 500; retry `git push` when convenient).
+- **Uncommitted (builds clean; P4 now HW-verified):** ioLibrary submodule + `.gitmodules`,
+  `drivers/w5500_port.c/.h`, `services/net_mqtt.c/.h`, `services/timebase.c` (MilliTimer hook),
+  `app/app.c`, and the MPLAB project files (`nbproject/configurations.xml`, `project.xml` — Ramon's
+  file/include-dir additions). Suggested as **two commits**: P3 (submodule + `.gitmodules` +
+  project files + w5500_port) then P4 (net_mqtt + app.c + timebase.c). Submodule verified pristine
+  (an unnecessary `../wizchip_conf.h` edit in `w5500.h` was reverted; clean rebuild passes).
+- **ioLibrary MPLAB gotchas (for the install guide later):** adding files and adding include dirs
+  are TWO separate steps — "No such file" = missing include dir (Properties → xc32-gcc →
+  *Preprocessing and messages* → Include directories); "undefined reference" = missing `.c` in
+  Source Files (Add Existing Item). Preprocessor macro `_WIZCHIP_=W5500` is required (header
+  defaults to W6300; `w5500.c` is `#if (_WIZCHIP_==5500)`). **Four** ioLibrary include dirs now:
+  `.../Ethernet`, `.../ioLibrary_Driver`, `.../Internet/MQTT`, `.../Internet/MQTT/MQTTPacket/src`.
+  MQTT `.c` files in the project: `MQTTClient.c`, `mqtt_interface.c`, all `MQTTPacket/src/*.c`.
+  Never edit submodule files.
+- **Pi static-IP gotcha:** direct cable = no DHCP, so the Pi's `eth0` needs a manual IP on the
+  node's /24. `nmcli con mod node-link ipv4.addresses 192.168.1.5/24` — **the /24 matters**: a /32
+  (what the first bad `nmcli` left) makes the Pi think it's the only host on the net, so ARP for
+  .50 never leaves and ping is 100% loss. Node 192.168.1.50, Pi 192.168.1.5, mask /24.
 - **Next steps:**
-  1. **P3 Ethernet**: W5500 bring-up, ioLibrary_Driver as a git submodule, VERSIONR==0x04, Pi ping.
+  1. **P4 step 2**: retained `/status` topic + last-will `"offline"` (set `data.willFlag` and
+     a `will` struct in `net_mqtt_connect`, publish `"online"` retained on connect).
   2. Optional: P1b TC4/EVSYS capture; nicer P2 LCD layout.
+  3. Bench wiring: distribute 5 V / GND better (breadboard power rail or Wago 221 lever nuts,
+     not a solder nest). One solid common ground for LCD/W5500/encoder/Nano; LCD backlight on
+     its own run back to the source.
+- **Deployment open question (Ramon, P5/P6):** does customer-site install need the same manual
+  static-IP dance? If the plant LAN has DHCP it won't; an isolated run will. Decide whether network
+  pairing lives *in* the planned node GUI or in a separate setup guide — see [[deployment-network-pairing-question]].
 - **How to run the host tests:** `cd SAMD21_Project/tests && make` (needs gcc on PATH). gcc is at
   `…/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_*/mingw64/bin`;
   a fresh shell picks it up, else prepend that bin to PATH (same pattern as the §4 XC32 build).
 - **Open MCC to-dos (Ramon):** none outstanding — GCLK2 is now repurposed to clock the WDT.
 - **Hardware notes:** KY-040 is mechanically bouncy — `invalid` counter climbs and counts drift
   slightly; this is the cheap knob, not the firmware (the production optical encoder won't do it).
-  RPM reads cleanly, which is what matters. LCD contrast best near the end of the pot's travel;
-  backlight very bright — consider a 330–470 Ω series resistor on pin 15.
+  RPM reads cleanly, which is what matters. LCD contrast best near the end of the pot's travel.
+  **LCD VDD must be 5 V** (not 3.3 V) — on 3.3 V the 5 V HD44780 renders faintly/not at all.
 
 ---
 
@@ -139,12 +178,18 @@ off). No WDT PLIB in this CSP — `services/wdt.c` kicks it with a direct CLEAR-
 | Repo outside OneDrive; GitHub private (Rrodriguez-microchip/encoder-telemetry-node) | OneDrive and `.git` conflict. |
 | Encoder is a 3-layer split: `encoder.h` API / `encoder_core` pure logic / per-sensor backend | Swapping KY-040 → optical encoder is one new backend file; API, core, telemetry, app unchanged. |
 | Unity vendored (3 files) under `tests/unity/`, not a submodule; host tests via plain gcc Makefile | 3 MIT files, network-free build, lighter than a submodule. Host compiler = MinGW-w64 (winget); only `xc32-gcc` (ARM) was present. |
+| W5500 selected via project define `_WIZCHIP_=W5500` + two include dirs, never by editing the submodule | Submodule is pinned external code; edits vanish on update. Header defaults to W6300 under `#ifndef`, and `w5500.c` is `#if (_WIZCHIP_==5500)` — wrong/absent define = undefined `WIZCHIP_WRITE/READ` at link. |
+| Node + Pi static IP on a /24; direct Cat6 has no DHCP | `/24` lets the Pi treat the whole 192.168.1.x as local (ARP works); a stray `/32` makes it the sole host and ping never leaves. Node .50, Pi .5. Revisit for customer LANs (may have DHCP). |
+| MQTT via ioLibrary's bundled Paho client (`Internet/MQTT`), not hand-rolled; reuse `telemetry_build()` for the payload | Same "use the vendored driver" call as the W5500 port. One payload builder feeds both UART and MQTT so they never drift. 1 Hz/QoS 0 for bring-up; blocking connect, reconnect deferred to P5. |
+| MQTT 1 ms timer driven from the TC3 tick ISR (`MilliTimer_Handler`) | The Paho port needs a 1 ms countdown tick; TC3 already fires every 1 ms. One short call in the existing ISR, no new timer. |
 | Two backends: `encoder_poll.c` (knob) and `encoder_eic.c` (optical), one in the build at a time | Mechanical KY-040 bounces for ms; 1 ms polling beats edge interrupts for it. Optical needs interrupts (16.8k edges/s). |
 | Core recovers a skipped quadrature state as ±2 in the last direction (not drop) | Dropping a both-bits-changed transition loses counts and drifts. Shaft really moved 2; only a reversal exactly on a skip errs, and self-corrects. |
 | rpm as integer ×10, speed as milli-ft/s; conversion in telemetry not encoder | No %f (XC32 float lib). `ft_s = rpm/60 × feet_per_rev`; feet_per_rev lives in `config` (→ NVM in P5), not the sensor driver. |
 | UART logging via `services/log.c` (non-blocking, drops), not raw printf | Generated `SERCOM5_USART_Write` spins forever on DRE; a wedged TX would hang the superloop. log_line drops the line instead. |
 | WDT via config fuse + register kick (no PLIB); GCLK2 repurposed to clock it | This CSP exposes WDT only through fuses. A WDT reset is a normal reset; SWD reflash is never blocked by it. |
 | Ramon configures peripherals/clocks in MCC himself, even when code could | Keeps generated config the single source of truth; matches the "never hand-edit config/default" rule. |
+| MQTT connect runs lazily inside `net_mqtt_task()` (loop), never in init; retries every 3 s while down | A blocking connect in init runs before the superloop, so the WDT isn't petted — an unreachable broker reset-loops the node. In-loop connect keeps the dog fed and makes the node tolerate a broker that's off at boot or comes and goes; auto-reconnects. |
+| Shorten W5500 TCP retry: `setRTR(2000)`+`setRCR(3)` (~0.8 s) in `w5500_net_up()` | Default RTR=2000(200ms)×RCR=8 ≈ 1.8 s to time out — right at the 1.9 s WDT, so a failed connect would reset mid-handshake. 3 retries fails fast, safely under the WDT. |
 
 ## 7. Phase plan & P1 spec
 
