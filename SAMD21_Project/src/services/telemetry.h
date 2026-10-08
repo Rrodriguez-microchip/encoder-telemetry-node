@@ -34,4 +34,13 @@ size_t telemetry_build(char *buf, size_t len);
  * ~10 Hz. Call every superloop pass; it self-gates on the timebase. */
 void telemetry_task(void);
 
+/* Material-math helpers, shared so the LCD and the JSON payload use ONE
+ * implementation of the feet_per_rev conversion and can never drift (same
+ * "one builder feeds both" rule as the UART/MQTT payload). Both are integer-
+ * only (no %f): split them into whole/frac for display.
+ *   speed:  milli-ft/s  = (rpm/60) * feet_per_rev   -> frac is thousandths
+ *   total:  milli-ft     = revolutions * feet_per_rev -> frac is thousandths */
+uint32_t telemetry_speed_milli_ft_s(void);
+int32_t  telemetry_total_milli_ft(void);
+
 #endif /* TELEMETRY_H */

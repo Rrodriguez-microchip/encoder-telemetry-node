@@ -90,27 +90,29 @@ void app_run(void)
         {
             t_lcd += LCD_PERIOD_MS;
 
-            int32_t  cnt = encoder_get_count();
-            int32_t  det = encoder_get_detents();
-            int32_t  rev = encoder_get_revolutions();
-            uint32_t r10 = encoder_get_rpm_x10();
+            /* Operator-facing linear-material view (count/detents are dev-only
+             * and no longer shown). Row 0: speed ft/s + direction. Row 1:
+             * total feet extruded. Both come from telemetry's shared material
+             * math so the LCD and the JSON payload never disagree. */
+            uint32_t sp_milli  = telemetry_speed_milli_ft_s();   /* milli-ft/s */
+            int32_t  tot_milli = telemetry_total_milli_ft();     /* milli-ft   */
 
-            (void)snprintf(line, sizeof line, "C%ld D%ld R%ld",
-                           (long)cnt, (long)det, (long)rev);
+            /* Speed: "<whole>.<2 frac> ft/s <dir>". Thousandths -> hundredths
+             * for the display (plenty of resolution on a 16-col row). */
+            (void)snprintf(line, sizeof line, "%lu.%02lu ft/s %c",
+                           (unsigned long)(sp_milli / 1000U),
+                           (unsigned long)((sp_milli % 1000U) / 10U),
+                           dir_char(encoder_get_direction()));
             lcd_write_line(0U, line);
 
-            /* Clamp the whole part to 4 digits so the row always fits 16 cols
-             * (the compiler can't prove the uint is small; a real sensor won't
-             * reach 9999 RPM but the display must not silently truncate). */
-            uint32_t rpm_whole = r10 / 10U;
-            if (rpm_whole > 9999U)
-            {
-                rpm_whole = 9999U;
-            }
-            (void)snprintf(line, sizeof line, "rpm %lu.%lu %c",
-                           (unsigned long)rpm_whole,
-                           (unsigned long)(r10 % 10U),
-                           dir_char(encoder_get_direction()));
+            /* Total: "Tot <whole>.<2 frac> ft". Signed (a reversed shaft can
+             * net negative); print the sign and work in magnitude so the
+             * fractional split is correct for negatives too. */
+            long     tot_whole = (long)(tot_milli / 1000);
+            uint32_t tot_frac  = (uint32_t)((tot_milli < 0 ? -tot_milli : tot_milli)
+                                            % 1000) / 10U;
+            (void)snprintf(line, sizeof line, "Tot %ld.%02lu ft",
+                           tot_whole, (unsigned long)tot_frac);
             lcd_write_line(1U, line);
         }
     }

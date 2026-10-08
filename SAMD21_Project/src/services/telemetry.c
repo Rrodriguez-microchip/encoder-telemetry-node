@@ -14,16 +14,28 @@
  *   milli_ft_s = (rpm_x10 * fpr_milli) / (60 * 10)
  * Done in 64-bit: rpm_x10 (<~1e5) * fpr_milli (~1e3) stays well within range,
  * but 64-bit keeps headroom if either grows. */
-static uint32_t speed_milli_ft_s(void)
+uint32_t telemetry_speed_milli_ft_s(void)
 {
     uint64_t n = (uint64_t)encoder_get_rpm_x10() * config_feet_per_rev_milli();
     return (uint32_t)(n / 600U);
 }
 
+/* Total material extruded since init, in milli-feet.
+ *   total_ft = revolutions * feet_per_rev
+ * revolutions is signed; feet_per_rev_milli is already x1000, so the product
+ * is milli-feet directly. 64-bit intermediate so a long run can't overflow
+ * before we cast back (revolutions * ~1e3 stays in range for any real run). */
+int32_t telemetry_total_milli_ft(void)
+{
+    int64_t n = (int64_t)encoder_get_revolutions()
+                * (int64_t)config_feet_per_rev_milli();
+    return (int32_t)n;
+}
+
 size_t telemetry_build(char *buf, size_t len)
 {
     uint32_t r10 = encoder_get_rpm_x10();
-    uint32_t sp  = speed_milli_ft_s();
+    uint32_t sp  = telemetry_speed_milli_ft_s();
 
     /* rpm and speed printed as "<whole>.<frac>" from their scaled integers
      * (no %f). rpm frac is tenths (x10); speed frac is thousandths (x1000). */
