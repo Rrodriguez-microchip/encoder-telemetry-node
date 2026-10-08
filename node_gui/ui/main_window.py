@@ -61,7 +61,7 @@ class MainWindow:
         self._tile_dir = ValueTile(grid, "Direction")
         self._tile_count = ValueTile(grid, "Count")
         self._tile_rev = ValueTile(grid, "Revolutions")
-        self._tile_btn = ValueTile(grid, "Button")
+        self._tile_total = ValueTile(grid, "Total extruded", unit=" ft")
 
         # Row 0: the headline readings. Row 1: the raw/diagnostic ones.
         self._tile_rpm.grid(row=0, column=0, sticky="nsew")
@@ -69,7 +69,14 @@ class MainWindow:
         self._tile_dir.grid(row=0, column=2, sticky="nsew")
         self._tile_count.grid(row=1, column=0, sticky="nsew")
         self._tile_rev.grid(row=1, column=1, sticky="nsew")
-        self._tile_btn.grid(row=1, column=2, sticky="nsew")
+        self._tile_total.grid(row=1, column=2, sticky="nsew")
+
+        # Reset tares the "total extruded" reading (GUI-only; node untouched).
+        footer = tk.Frame(self._root, pady=6)
+        footer.pack(fill=tk.X)
+        tk.Button(
+            footer, text="Reset total", command=self._model.reset_total
+        ).pack(side=tk.RIGHT, padx=12)
 
     # --- periodic redraw ---------------------------------------------------
 
@@ -91,7 +98,7 @@ class MainWindow:
         self._tile_dir.set_value(self._direction_text(snap["direction"]))
         self._tile_count.set_value(str(snap["count"]))
         self._tile_rev.set_value(str(snap["revolutions"]))
-        self._tile_btn.set_value("pressed" if snap["button"] else "—")
+        self._tile_total.set_value(f"{snap['total_ft']:.3f}")
 
         self._update_status(snap)
 

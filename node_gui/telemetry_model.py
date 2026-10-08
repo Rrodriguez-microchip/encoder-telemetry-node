@@ -38,6 +38,12 @@ class TelemetryModel:
     last_telemetry_ts: float = 0.0  # time.monotonic() of last telemetry msg
     connected_to_broker: bool = False  # our own MQTT socket is up
 
+    # Tare baseline for "total extruded". The node counts continuously; the
+    # dashboard shows distance *since the last reset* by subtracting the
+    # revolution count captured when Reset was pressed. GUI-only -- the node is
+    # untouched. None means "not tared yet", so we tare to the first sample.
+    _rev_baseline: "int | None" = None
+
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     def update_telemetry(self, data: dict) -> None:
@@ -56,6 +62,22 @@ class TelemetryModel:
             self.button = int(data.get("btn", self.button))
             self.last_telemetry_ts = time.monotonic()
 
+            # First sample we ever see sets the tare baseline, so "total
+            # extruded" starts at ~0 when the dashboard opens rather than
+            # showing the node's lifetime count.
+            if self._rev_baseline is None:
+                self._rev_baseline = self.revolutions
+
+    def reset_total(self) -> None:
+        """Zero the 'total extruded' reading (tare).
+
+        Captures the current revolution count as the new baseline. GUI-only:
+        the node keeps counting; only this view's total resets. Called from the
+        UI thread when Reset is pressed.
+        """
+        with self._lock:
+            self._rev_baseline = self.revolutions
+
     def set_online(self, online: bool) -> None:
         """Record the latest /status presence. Called from the MQTT thread."""
         with self._lock:
@@ -73,11 +95,19 @@ class TelemetryModel:
         values. Also computes `stale` (telemetry gone quiet) here so the UI
         doesn't have to know the timing rule.
         """
-        from config import STALE_AFTER_S
+        from config import STALE_AFTER_S, FEET_PER_REV
 
         with self._lock:
             age = time.monotonic() - self.last_telemetry_ts
             stale = (self.last_telemetry_ts == 0.0) or (age > STALE_AFTER_S)
+
+            # Total extruded since the last reset = revolutions past the
+            # baseline x feet-per-rev. Zero until we've taken a baseline.
+            if self._rev_baseline is None:
+                total_ft = 0.0
+            else:
+                total_ft = (self.revolutions - self._rev_baseline) * FEET_PER_REV
+
             return {
                 "count": self.count,
                 "detents": self.detents,
@@ -86,6 +116,7 @@ class TelemetryModel:
                 "rpm": self.rpm,
                 "ft_s": self.ft_s,
                 "button": self.button,
+                "total_ft": total_ft,
                 "online": self.online,
                 "connected_to_broker": self.connected_to_broker,
                 "stale": stale,

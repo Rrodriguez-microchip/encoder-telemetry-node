@@ -27,6 +27,15 @@ NODE_ID = "node01"
 TELEMETRY_TOPIC = f"bldg/{AREA}/{NODE_ID}/telemetry"
 STATUS_TOPIC = f"bldg/{AREA}/{NODE_ID}/status"
 
+# --- Material geometry (MUST match the firmware) ---------------------------
+# feet of material per shaft revolution, used to turn the node's revolution
+# count into a "total extruded" distance. This MIRRORS the firmware's
+# config.c value (CFG_FEET_PER_REV_MILLI / 1000). If you recalibrate it in the
+# firmware, update it HERE TOO -- the GUI has no way to know otherwise. (A
+# future firmware change could add feet_per_rev to the telemetry JSON and this
+# duplicate would go away.)
+FEET_PER_REV = 1.000   # placeholder, same as firmware; calibrate on the machine
+
 # --- UI behaviour ----------------------------------------------------------
 # How often the window redraws from the latest data, in milliseconds. The node
 # publishes telemetry at ~1 Hz over MQTT, so 250 ms keeps the UI responsive

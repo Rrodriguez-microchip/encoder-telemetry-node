@@ -13,7 +13,10 @@ command the node.
 ## What it looks like / what it shows
 
 - **Headline tiles:** RPM and Speed (ft/s) — the two numbers that matter.
-- **Direction / Count / Revolutions / Button:** the rest of the telemetry.
+- **Direction / Count / Revolutions / Total extruded:** the rest of the readout.
+  "Total extruded" is distance since the last reset (revolutions × feet-per-rev),
+  tared by the **Reset total** button. Reset is GUI-only — it zeroes this view's
+  total; the node keeps counting and is not touched.
 - **Status light** (top right):
   - 🟢 green — node online and telemetry fresh
   - 🟠 amber — `/status` says online but no telemetry for a few seconds
@@ -87,6 +90,7 @@ All knobs live in `config.py`:
 |---|---|
 | `BROKER_HOST` / `BROKER_PORT` | where Mosquitto is (`localhost` on the Pi, else its IP) |
 | `AREA` / `NODE_ID` | which node to watch; builds the topic strings |
+| `FEET_PER_REV` | feet per shaft rev for "total extruded" — **must match firmware config.c** |
 | `UI_REFRESH_MS` | how often the window redraws (default 250 ms) |
 | `STALE_AFTER_S` | seconds of telemetry silence before the amber "stale" state |
 
