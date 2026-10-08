@@ -26,4 +26,31 @@ const char *config_area(void);
 /* Calibrated feet per shaft revolution, x1000 (milli-feet). */
 uint32_t config_feet_per_rev_milli(void);
 
+/* ---------------------------------------------------------------------------
+ * Geometry -> feet_per_rev estimate (STUB -- fill in once the gear data is known)
+ *
+ * The encoder measures ENCODER-SHAFT revolutions. We want FEET OF METAL per
+ * encoder-shaft revolution. The physical chain is usually:
+ *
+ *     encoder shaft --(gearing)--> measuring roller/sprocket --> linear metal
+ *
+ * feet_per_rev = (measuring_element_circumference)        <- feet of metal per
+ *                 * (measuring_revs_per_encoder_rev)         turn of the roller
+ *
+ * where measuring_revs_per_encoder_rev = driver_teeth / driven_teeth
+ * (= 1.0 if the encoder sits directly on the measuring element).
+ *
+ * This is only an ESTIMATE (chain slip + unknown downstream geometry -- see the
+ * CLAUDE.md decisions log). The real value comes from calibrating on the machine
+ * (run a known length, compare to counted revs) and trimming with the correction
+ * factor below. The estimate is a sane starting point, not the final number.
+ *
+ * All integer math (no %f in XC32). Fill in the four CFG_GEOM_* values in
+ * config.c when you have the gear/roller data, then switch
+ * config_feet_per_rev_milli() to return this instead of the flat placeholder.
+ *
+ * Returns feet per revolution x1000 (milli-feet), same units as the accessor.
+ * --------------------------------------------------------------------------- */
+uint32_t config_calc_feet_per_rev_milli(void);
+
 #endif /* CONFIG_H */
