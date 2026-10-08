@@ -1,0 +1,9 @@
+# Node GUI dashboard dependencies.
+#
+# paho-mqtt is the only external package. Tkinter ships with Python itself
+# (on Windows and macOS; on the Pi/Debian it may need the system package
+# python3-tk -- see README.md), so it is NOT listed here.
+#
+# Pinned to the 2.x line because mqtt_client.py uses the v2 callback API
+# (CallbackAPIVersion.VERSION2), which does not exist in paho 1.x.
+paho-mqtt>=2.0,<3.0
