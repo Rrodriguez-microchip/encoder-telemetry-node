@@ -31,13 +31,21 @@ static unsigned char s_readbuf[256];
 
 static Network     s_net;
 static MQTTClient  s_client;
-static char        s_topic[64];       /* bldg/<area>/<node_id>/telemetry */
+static char        s_topic[64];        /* bldg/<area>/<node_id>/telemetry */
+static char        s_status_topic[64]; /* bldg/<area>/<node_id>/status    */
 static bool        s_connected;
+
+/* Retained presence payloads. "online" is published on connect; "offline"
+ * is the last-will the broker publishes for us if we drop uncleanly. */
+#define STATUS_ONLINE   "online"
+#define STATUS_OFFLINE  "offline"
 
 bool net_mqtt_connect(void)
 {
-    /* Topic is fixed for this node's lifetime; build it once. */
+    /* Topics are fixed for this node's lifetime; build them once. */
     (void)snprintf(s_topic, sizeof s_topic, "bldg/%s/%s/telemetry",
+                   config_area(), config_node_id());
+    (void)snprintf(s_status_topic, sizeof s_status_topic, "bldg/%s/%s/status",
                    config_area(), config_node_id());
 
     NewNetwork(&s_net, MQTT_SOCKET);
@@ -58,12 +66,36 @@ bool net_mqtt_connect(void)
     data.keepAliveInterval = KEEPALIVE_S;
     data.cleansession      = 1;
 
+    /* Last-will: the broker publishes this retained "offline" on the status
+     * topic if we drop WITHOUT a clean DISCONNECT (cable pull, power loss,
+     * crash). This is the presence half of the contract -- a dashboard can
+     * tell "shaft stopped" (telemetry quiet) from "node died" (status offline).
+     * We have no graceful-shutdown path on bare metal, so the will covers
+     * every realistic exit; we never publish "offline" ourselves. */
+    data.willFlag              = 1;
+    data.will.topicName.cstring = s_status_topic;
+    data.will.message.cstring   = STATUS_OFFLINE;
+    data.will.retained         = 1;
+    data.will.qos              = QOS0;
+
     if (MQTTConnect(&s_client, &data) != 0)
     {
         log_line("mqtt: CONNECT rejected");
         s_connected = false;
         return false;
     }
+
+    /* Overwrite the will with a retained "online". Retained so a subscriber
+     * that connects LATER still sees our current presence immediately, without
+     * waiting for the next change. */
+    MQTTMessage status;
+    status.qos        = QOS0;
+    status.retained   = 1;
+    status.dup        = 0;
+    status.id         = 0;
+    status.payload    = (void *)STATUS_ONLINE;
+    status.payloadlen = sizeof(STATUS_ONLINE) - 1U;   /* no NUL on the wire */
+    (void)MQTTPublish(&s_client, s_status_topic, &status);
 
     log_line("mqtt: connected");
     s_connected = true;

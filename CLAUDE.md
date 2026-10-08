@@ -12,8 +12,8 @@ MCC setup is in `SAMD21 Node MCC Harmony 3 Setup Walkthrough.md`.
 - **Phase:** P0 ✅ · P2a LCD ✅ · timebase ✅ (tested) · **P1 encoder ✅ (tested on KY-040)** ·
   telemetry ✅ · robustness nice-to-haves (WDT, non-blocking log, config, speed_ft_s) ✅ (tested) ·
   **Unity host tests ✅ (10/10 pass on PC)** · **P3 Ethernet ✅ (VERSIONR=0x04, Pi ping 0% loss)** ·
-  **P4 MQTT telemetry ✅ (VERIFIED on HW — live publish on the Pi, values track the knob)**.
-  **Next: P4 step 2 — retained /status + last-will "offline".**
+  **P4 MQTT telemetry ✅ (VERIFIED on HW — live publish, retained /status + last-will)**.
+  **Next: P5 robustness (NVM config, UART CLI, keepalive tuning) OR the teaching guide.**
 - **Last session (2026-10-08):** flashed & verified P4 on HW. Hit a WDT reset loop first
   (banner reprinting every ~2 s): the blocking `net_mqtt_connect()` ran in init *before* the
   superloop, so the WDT (~1.9 s) was never petted while `connect()` spun on the TCP handshake.
@@ -25,18 +25,21 @@ MCC setup is in `SAMD21 Node MCC Harmony 3 Setup Walkthrough.md`.
   fix: `mosquitto_sub` on the Pi showed `bldg/extrusion/node01/telemetry {...}` ~1 Hz, values
   tracking the knob. Mosquitto confirmed `LISTEN 0.0.0.0:1883`. Pi 4 (Debian, user `ramon`,
   host `Test`) on SSH over LAN.
+  Then did **P4 step 2** (retained `/status` + last-will) — HW-verified: `status online` on
+  connect, `status offline` fired by the broker on reconnect (session takeover kicks the zombie
+  session → fires the will). Note: an unclean drop (cable pull) only surfaces `offline` after the
+  keepalive timeout (~1.5× 60 s ≈ 90 s), OR instantly on reconnect via takeover — both expected.
+  P5 can lower `KEEPALIVE_S` if faster node-down detection is wanted.
 - **LCD gotcha (cost an hour):** 1602A VDD must be **5 V**, not 3.3 V. On 3.3 V it rendered
   faintly/intermittently (looked like a contrast problem); the real issue is the 5 V HD44780's
   V_IH. 5 V VDD → crisp. Node logic lines are 3.3 V and clear the 5 V panel's input threshold
   fine; it's VDD that must be 5 V.
 - **Committed:** `tests/` Unity suite (`6b13534`, local only — the earlier push to GitHub hit a
   transient 500; retry `git push` when convenient).
-- **Uncommitted (builds clean; P4 now HW-verified):** ioLibrary submodule + `.gitmodules`,
-  `drivers/w5500_port.c/.h`, `services/net_mqtt.c/.h`, `services/timebase.c` (MilliTimer hook),
-  `app/app.c`, and the MPLAB project files (`nbproject/configurations.xml`, `project.xml` — Ramon's
-  file/include-dir additions). Suggested as **two commits**: P3 (submodule + `.gitmodules` +
-  project files + w5500_port) then P4 (net_mqtt + app.c + timebase.c). Submodule verified pristine
-  (an unnecessary `../wizchip_conf.h` edit in `w5500.h` was reverted; clean rebuild passes).
+- **Committed this session:** P3 Ethernet + P4 MQTT (telemetry + /status + last-will) in one
+  commit — ioLibrary submodule + `.gitmodules`, `drivers/w5500_port.c/.h`, `services/net_mqtt.c/.h`,
+  `services/timebase.c` (MilliTimer hook), `app/app.c`, MPLAB project files. Submodule verified
+  pristine (an unnecessary `../wizchip_conf.h` edit in `w5500.h` was reverted; clean rebuild passes).
 - **ioLibrary MPLAB gotchas (for the install guide later):** adding files and adding include dirs
   are TWO separate steps — "No such file" = missing include dir (Properties → xc32-gcc →
   *Preprocessing and messages* → Include directories); "undefined reference" = missing `.c` in
