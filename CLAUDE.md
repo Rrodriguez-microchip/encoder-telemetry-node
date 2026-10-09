@@ -12,9 +12,39 @@ MCC setup is in `SAMD21 Node MCC Harmony 3 Setup Walkthrough.md`.
 - **Phase:** P0 ✅ · P2a LCD ✅ · timebase ✅ (tested) · **P1 encoder ✅ (tested on KY-040)** ·
   telemetry ✅ · robustness nice-to-haves (WDT, non-blocking log, config, speed_ft_s) ✅ (tested) ·
   **Unity host tests ✅ (10/10 pass on PC)** · **P3 Ethernet ✅ (VERSIONR=0x04, Pi ping 0% loss)** ·
-  **P4 MQTT telemetry ✅ (VERIFIED on HW — live publish, retained /status + last-will)**.
-  **Next: P5 robustness (NVM config, UART CLI, keepalive tuning) OR the teaching guide.**
-- **Last session (2026-10-08):** flashed & verified P4 on HW. Hit a WDT reset loop first
+  **P4 MQTT telemetry ✅ (VERIFIED on HW — live publish, retained /status + last-will)** ·
+  **node_gui desktop dashboard + Settings dialog ✅ (committed, NOT yet HW-verified)** ·
+  **LCD now shows speed ft/s + total extruded ✅ (committed, NOT yet confirmed rendering on HW)** ·
+  **P5 keepalive tuning ✅ (HW-verified: KEEPALIVE_S 60→15, offline in ~22 s)**.
+  **Next: HW-verify the GUI/LCD work, then rest of P5 (NVM config + UART CLI) OR the teaching guide.**
+- **Last session (2026-10-09):** caught CLAUDE.md §1 up to 5 commits that had landed since the
+  2026-10-08 writeup (a tool-switch gap). Those commits, oldest→newest:
+  `9b2c8a8` geometry→feet_per_rev stub (`config_calc_feet_per_rev_milli()`, all-integer, four
+  `CFG_GEOM_*` STUB values still 0/1 — fill in real gear/roller data, then switch
+  `config_feet_per_rev_milli()` to return it; see `FT_S_CALIBRATION_TODO.md`) ·
+  `0fc8ce2`/`7b13c32`/`39b314a` **node_gui** — a cross-platform (Pi4 + Windows) Tkinter MQTT
+  dashboard: read-only live viewer (RPM/speed/dir/total/status light), a GUI-only "Reset total"
+  tare, and a customer Settings dialog (broker IP/port + area/node, reconnects on save).
+  Clean split: `main.py` wires, `config.py`/`settings_store.py` config, `mqtt_client.py` backend,
+  `telemetry_model.py` shared state, `ui/` layout — mirrors the firmware's layering. See
+  `node_gui/README.md`. **Untested on HW — not confirmed against a live broker.** ·
+  `7797aa5` **LCD layout change**: dropped count/detents/rpm; row0 = `"<n>.<2> ft/s <dir>"`,
+  row1 = `"Tot <n>.<2> ft"`. Both now come from shared `telemetry_speed_milli_ft_s()` /
+  `telemetry_total_milli_ft()` so the LCD and JSON payload use ONE copy of the material math and
+  can't drift. **Not yet confirmed it renders correctly on the panel.**
+- **P5 (small) this session (2026-10-09), HW-VERIFIED:** `KEEPALIVE_S` 60→15 in `net_mqtt.c`
+  (dead-node `offline` detection ~90 s → ~22 s; free while healthy — the 1 Hz publish resets the
+  broker's keepalive timer, so no extra PINGREQ traffic). Reconnect path needed no work: it was
+  already complete from the P4 WDT fix (publish-fail → `s_connected=false` → lazy-connect retries
+  every 3 s → re-publishes on success). Verified on HW: `online` + steady 1 Hz telemetry, no false
+  `offline` over a minute idle, and a cable-pull fired `offline` in ~22 s. (Pi test gotcha:
+  `mosquitto_sub -F '%I ...'` prints nothing on older builds — `%I` is unsupported; use plain `-v`,
+  or pipe through `date` for timestamps.)
+- **Cleanup to flag:** `node_gui/__pycache__/*.pyc` (7 files) got committed even though
+  `node_gui/.gitignore` lists `__pycache__/`. The ignore only applies to untracked files, so the
+  already-staged `.pyc`s slipped in. Worth a `git rm -r --cached node_gui/**/__pycache__` in a
+  tidy-up commit; harmless but noise.
+- **(2026-10-08) P4 verification:** flashed & verified P4 on HW. Hit a WDT reset loop first
   (banner reprinting every ~2 s): the blocking `net_mqtt_connect()` ran in init *before* the
   superloop, so the WDT (~1.9 s) was never petted while `connect()` spun on the TCP handshake.
   Fixed by (a) `setRTR(2000)/setRCR(3)` in `w5500_net_up()` so a failed connect times out in
@@ -36,10 +66,11 @@ MCC setup is in `SAMD21 Node MCC Harmony 3 Setup Walkthrough.md`.
   fine; it's VDD that must be 5 V.
 - **Committed:** `tests/` Unity suite (`6b13534`, local only — the earlier push to GitHub hit a
   transient 500; retry `git push` when convenient).
-- **Committed this session:** P3 Ethernet + P4 MQTT (telemetry + /status + last-will) in one
-  commit — ioLibrary submodule + `.gitmodules`, `drivers/w5500_port.c/.h`, `services/net_mqtt.c/.h`,
-  `services/timebase.c` (MilliTimer hook), `app/app.c`, MPLAB project files. Submodule verified
-  pristine (an unnecessary `../wizchip_conf.h` edit in `w5500.h` was reverted; clean rebuild passes).
+- **Committed (P3/P4, 2026-10-08):** P3 Ethernet + P4 MQTT (telemetry + /status + last-will) —
+  `e886f19`/`e2d9f0b`/`c74469f`. ioLibrary submodule + `.gitmodules`, `drivers/w5500_port.c/.h`,
+  `services/net_mqtt.c/.h`, `services/timebase.c` (MilliTimer hook), `app/app.c`, MPLAB project
+  files. Submodule verified pristine (an unnecessary `../wizchip_conf.h` edit in `w5500.h` was
+  reverted; clean rebuild passes).
 - **ioLibrary MPLAB gotchas (for the install guide later):** adding files and adding include dirs
   are TWO separate steps — "No such file" = missing include dir (Properties → xc32-gcc →
   *Preprocessing and messages* → Include directories); "undefined reference" = missing `.c` in
@@ -53,10 +84,15 @@ MCC setup is in `SAMD21 Node MCC Harmony 3 Setup Walkthrough.md`.
   (what the first bad `nmcli` left) makes the Pi think it's the only host on the net, so ARP for
   .50 never leaves and ping is 100% loss. Node 192.168.1.50, Pi 192.168.1.5, mask /24.
 - **Next steps:**
-  1. **P4 step 2**: retained `/status` topic + last-will `"offline"` (set `data.willFlag` and
-     a `will` struct in `net_mqtt_connect`, publish `"online"` retained on connect).
-  2. Optional: P1b TC4/EVSYS capture; nicer P2 LCD layout.
-  3. Bench wiring: distribute 5 V / GND better (breadboard power rail or Wago 221 lever nuts,
+  1. **HW-verify the uncommitted-risk work:** (a) run `node_gui` against the live Pi broker and
+     confirm tiles/status-light track the node; (b) confirm the new LCD rows render (speed ft/s +
+     total extruded) on the 5 V panel. Both are committed but unverified on HW.
+  2. **P5 robustness:** NVM config (persist `node`/`area`/`feet_per_rev` + broker IP so they
+     survive reflash — ties into the geometry stub and the deployment pairing question),
+     UART CLI, keepalive tuning (lower `KEEPALIVE_S` for faster node-down detection).
+  3. Tidy-up: drop the committed `node_gui/**/__pycache__/*.pyc` (see cleanup note above).
+  4. Optional: P1b TC4/EVSYS capture.
+  5. Bench wiring: distribute 5 V / GND better (breadboard power rail or Wago 221 lever nuts,
      not a solder nest). One solid common ground for LCD/W5500/encoder/Nano; LCD backlight on
      its own run back to the source.
 - **Deployment open question (Ramon, P5/P6):** does customer-site install need the same manual
@@ -193,6 +229,9 @@ off). No WDT PLIB in this CSP — `services/wdt.c` kicks it with a direct CLEAR-
 | Ramon configures peripherals/clocks in MCC himself, even when code could | Keeps generated config the single source of truth; matches the "never hand-edit config/default" rule. |
 | MQTT connect runs lazily inside `net_mqtt_task()` (loop), never in init; retries every 3 s while down | A blocking connect in init runs before the superloop, so the WDT isn't petted — an unreachable broker reset-loops the node. In-loop connect keeps the dog fed and makes the node tolerate a broker that's off at boot or comes and goes; auto-reconnects. |
 | Shorten W5500 TCP retry: `setRTR(2000)`+`setRCR(3)` (~0.8 s) in `w5500_net_up()` | Default RTR=2000(200ms)×RCR=8 ≈ 1.8 s to time out — right at the 1.9 s WDT, so a failed connect would reset mid-handshake. 3 retries fails fast, safely under the WDT. |
+| LCD + JSON share ONE material-math impl (`telemetry_speed_milli_ft_s`/`_total_milli_ft`) | Same "one builder feeds both" rule as UART/MQTT: if the LCD computed ft/s separately it could drift from the published payload. Both integer-only, split whole/frac at the display. |
+| Geometry→feet_per_rev is a documented STUB (`config_calc_feet_per_rev_milli`), not yet wired | feet_per_rev is only an estimate until calibrated on the machine; all-integer (circumference milli-in × driver/driven teeth × ppt correction ÷12). Values are 0/1 placeholders — fill in, then switch the accessor. Keeps float lib out (no %f). |
+| node_gui is a read-only viewer; "Reset total" is GUI-only (tare), doesn't touch the node | A dashboard shouldn't command the machine in v1. The node keeps its own count; the GUI just zeroes its local view. Amber status light catches a dead node before the ~60–90 s last-will fires. |
 
 ## 7. Phase plan & P1 spec
 

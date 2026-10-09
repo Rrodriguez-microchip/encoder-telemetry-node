@@ -20,7 +20,13 @@ static const uint16_t BROKER_PORT  = 1883U;
 
 #define MQTT_SOCKET        1          /* W5500 socket for TCP (pin map: socket 1) */
 #define PUBLISH_PERIOD_MS  1000U      /* ~1 Hz; UART telemetry stays at 10 Hz */
-#define KEEPALIVE_S        60
+/* Keepalive governs how fast a DEAD node is detected: the broker fires our
+ * last-will "offline" after ~1.5 x KEEPALIVE_S of silence. It costs nothing
+ * while healthy -- we PUBLISH at 1 Hz and any client packet resets the broker's
+ * timer, so MQTTYield only ever emits a PINGREQ if a whole interval passes with
+ * no send (never, at 1 Hz). 15 s -> ~22 s detection, comfortably above the 1 s
+ * publish cadence so a quiet LAN won't false-trip. (Was 60 s -> ~90 s.) */
+#define KEEPALIVE_S        15
 #define CMD_TIMEOUT_MS     1000U
 #define RECONNECT_PERIOD_MS 3000U     /* while down, retry the broker this often */
 
