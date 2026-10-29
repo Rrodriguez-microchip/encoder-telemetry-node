@@ -62,5 +62,6 @@ UI_REFRESH_MS = 250
 
 # Seconds without any telemetry message before we show the node as "stale",
 # even if the retained /status still says online. Guards against a node that
-# died without the broker having fired the last-will yet (keepalive is 60 s).
+# died without the broker having fired the last-will yet (firmware keepalive is
+# 15 s, so the will can lag a silent death by ~22 s -- this flags it far sooner).
 STALE_AFTER_S = 5.0

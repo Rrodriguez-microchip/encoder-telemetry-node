@@ -4,7 +4,9 @@ Oct 5, 2026 · @Alejandro
 
 ## Overview
 
-The ETH WIZ Click sits in socket 1; the encoder and LCD use the empty socket 2 and 3 headers, so no soldering is needed.
+The ETH WIZ Click sits in socket 1; the encoder uses the empty socket 2 header, and the LCD hangs off the I2C bus (SDA/SCL) through an Adafruit #292 backpack, so no soldering is needed.
+
+> **Changed 2026-10-29:** the LCD moved from six parallel GPIOs to the I2C backpack (one 4-wire cable). PB08, PB23, PA28, PA05, PA23 and PA03 are free again.
 
 &#91;embedded content: system topology · node, network, broker\]
 
@@ -25,22 +27,20 @@ Every signal maps to a unique SAMD21 pin, and every interrupt input sits on its 
 | ENC\_A | PB02 | INT2 (socket 2 header) | EIC, both edges | 2 |
 | ENC\_B | PA04 | PWM2 (socket 2 header) | EIC, both edges | 4 |
 | ENC\_SW | PB03 | RST2 (socket 2 header) | GPIO input, pull-up | 3 (optional) |
-| LCD\_RS | PB08 | AN3 (socket 3 header) | GPIO output | — |
-| LCD\_E | PB23 | RST3 (socket 3 header) | GPIO output | — |
-| LCD\_D4 | PA28 | CS3 (socket 3 header) | GPIO output | — |
-| LCD\_D5 | PA05 | PWM3 (socket 3 header) | GPIO output | — |
-| LCD\_D6 | PA23 | INT3 (socket 3 header) | GPIO output | — |
-| LCD\_D7 | PA03 | AN2 (socket 2 header) | GPIO output | — |
+| LCD\_SDA | PA12 | SDA | SERCOM4 PAD0 (I2C) | — |
+| LCD\_SCL | PA13 | SCL | SERCOM4 PAD1 (I2C) | — |
 | DBG\_TX | PA22 | On-board to debugger CDC RX | SERCOM5 PAD0 | — |
 | DBG\_RX | PB22 | On-board from debugger CDC TX | SERCOM5 PAD2 | — |
 
-Left free for later: TX1/RX1 (PA08/PA09, SERCOM0), SDA/SCL (PA12/PA13, SERCOM4, the natural home for a 24AA02E48 MAC-address EEPROM), TX2/RX2 (PA20/PA21, SERCOM3, e.g. RS-485), AN1 (PA02, also the DAC), PWM1 (PB09) and CS2 (PA27).
+The I2C bus (PA12/PA13) is shared: a 24AA02E48 MAC-address EEPROM or any Qwiic device can join it at an address other than 0x20.
+
+Left free for later: TX1/RX1 (PA08/PA09, SERCOM0), the old LCD pins (PB08, PB23, PA28, PA05, PA23, PA03), TX2/RX2 (PA20/PA21, SERCOM3, e.g. RS-485), AN1 (PA02, also the DAC), PWM1 (PB09) and CS2 (PA27).
 
 Source: SAMD21G17D Curiosity Nano pinout and Curiosity Nano Base for Click boards Figure 3-1 / adapter schematic, as supplied by Ramon.
 
 ## Per-part wiring
 
-The ETH WIZ Click plugs straight into socket 1; the encoder and LCD connect with jumper wires into the empty socket 2 and socket 3 headers.
+The ETH WIZ Click plugs straight into socket 1; the encoder connects with jumper wires into the empty socket 2 header, and the LCD backpack connects to SDA/SCL.
 
 **ETH WIZ Click:** plug into mikroBUS socket 1. It runs from the socket's 3.3V pin; nothing else to wire.
 
@@ -56,39 +56,45 @@ The ETH WIZ Click plugs straight into socket 1; the encoder and LCD connect with
 
 Optional: 10 nF from CLK and from DT to GND. With the module's 10k pull-ups that is about a 100 µs filter against contact bounce.
 
-**1602A LCD** (16 pins, 4-bit mode):
+**1602A LCD + Adafruit #292 I2C backpack:** the backpack solders onto the LCD's 16-pin header and drives RS, E, D4–D7, contrast (its own pot) and the backlight. Address jumpers open (0x20), SPI-enable jumper open, 3-5V jumper intact.
 
-| LCD pin | Name | Wire to |
+Bench, using the backpack's 5-pin terminal block:
+
+| Terminal block | Signal | Wire to |
 | --- | --- | --- |
-| 1 | VSS | GND |
-| 2 | VDD | +5V (socket 3) |
-| 3 | V0 | 10k pot wiper; pot ends to +5V and GND |
-| 4 | RS | AN3 (socket 3), PB08 |
-| 5 | RW | GND, always |
-| 6 | E | RST3 (socket 3), PB23 |
-| 7–10 | D0–D3 | Not connected |
-| 11 | D4 | CS3 (socket 3), PA28 |
-| 12 | D5 | PWM3 (socket 3), PA05 |
-| 13 | D6 | INT3 (socket 3), PA23 |
-| 14 | D7 | AN2 (socket 2), PA03 |
-| 15 | A | +5V; add about 100 Ω in series if the module has no backlight resistor |
-| 16 | K | GND |
+| GND | Ground | GND (common with encoder and W5500) |
+| 5V | VIN, 3–5 V in | **VTG / +3.3V, not 5 V** |
+| DAT | SDA | SDA, PA12 |
+| CLK | SCL | SCL, PA13 |
+| LAT | SPI latch | Not connected (SPI mode only) |
 
-Bring-up check before any firmware: with power only, turning the pot should show a row of solid blocks on line 1. No blocks at any pot position means a power or V0 problem, not a code problem.
+Final, using the STEMMA QT / Qwiic 4-pin cable (same four signals; use the cable or the terminal block, not both):
+
+| Wire | Signal | Wire to |
+| --- | --- | --- |
+| Black | GND | GND |
+| Red | V+ | VTG / +3.3V |
+| Blue | SDA | PA12 |
+| Yellow | SCL | PA13 |
+
+Why 3.3 V on VIN: the backpack's 10k SDA/SCL pull-ups go to VIN, and the SAMD21 is not 5 V tolerant. The onboard boost still gives the LCD the 5 V VDD it needs.
+
+Bring-up check: if the backpack is missing or SDA/SCL are swapped, the UART prints `lcd: I2C backpack not found at 0x20 -- display disabled` at boot and the node runs on without a display. Backlight on but blank screen = turn the backpack's contrast pot.
 
 ## Peripheral assignments for MCC
 
-The whole node needs only these Harmony PLIBs: SERCOM1 (SPI), SERCOM5 (UART), EIC, two TCs, plus PORT, WDT and NVMCTRL.
+The whole node needs only these Harmony PLIBs: SERCOM1 (SPI), SERCOM4 (I2C), SERCOM5 (UART), EIC, two TCs, plus PORT, WDT and NVMCTRL.
 
 | Peripheral | Instance | Settings | Notes |
 | --- | --- | --- | --- |
 | SPI host | SERCOM1 | DOPO: DO PAD0, SCK PAD1, SS PAD2; DIPO: PAD3; mode 0; start at 2 MHz | Hardware SS off; ETH\_CS driven as GPIO so it stays low across a whole W5500 frame |
+| I2C host | SERCOM4 | I2C master, 400 kHz, SDA hold default; interrupt on, priority 3 | SDA/SCL are fixed to PAD0/PAD1 in I2C mode (no pinout options); pick PA12/PA13 in Pin Manager. Internal pull-ups off (backpack has 10k) |
 | USART | SERCOM5 | TXPO PAD0, RXPO PAD2, 115200 8N1 | Shows up as the Curiosity Nano virtual COM port |
 | EIC | EXTINT2, EXTINT4 | Both edges, filter on, interrupt enabled, event output enabled on EXTINT2 | Encoder A/B |
 | EIC | EXTINT3, EXTINT6 | Optional: button (falling) and W5500 INT (falling) | Start by polling both |
 | TC | TC3 | 1 ms periodic interrupt | System tick for the superloop |
 | TC + EVSYS | TC4 | Capture mode, fed by the EXTINT2 event | Edge-period timing for RPM (phase P2b) |
-| PORT | — | Pin names from the pin map; ETH\_CS and ETH\_RST start high; ENC\_SW pull-up on | LCD pins plain outputs |
+| PORT | — | Pin names from the pin map; ETH\_CS and ETH\_RST start high; ENC\_SW pull-up on | — |
 | WDT | — | Enable in phase P5 | Off during early debugging |
 | NVMCTRL | — | Reserve one flash row for config | Node ID, IP mode, broker IP |
 
@@ -98,13 +104,11 @@ W5500 reset at boot: hold ETH\_RST low for at least 500 µs, release, then wait 
 
 The one wiring mistake that can damage the board is putting 5V on a SAMD21 pin; everything else here is a debugging-time issue.
 
-- **5V exposure.** SAMD21 I/O is not 5V tolerant. Only LCD VDD, the backlight and the contrast pot touch 5V. LCD RW must be tied to GND before first power-up, and the encoder's + pin goes to 3.3V, because its pull-ups follow that pin.
-- **3.3V logic into a 5V LCD.** Most HD44780-compatible controllers read 3.3V as high, but it varies by clone. If text is garbled or random, add a 74HCT245 buffer on the six LCD lines.
-- **EXTINT sharing.** PA03 (LCD\_D7) shares EXTINT3 with PB03 (ENC\_SW), and PA20 shares EXTINT4 with PA04 (ENC\_B). That is fine because PA03 is an output and PA20 is unused; just never enable EIC on both pins of a pair.
+- **5V exposure.** SAMD21 I/O is not 5V tolerant. The LCD backpack's VIN and the encoder's + pin both go to 3.3V, because their pull-ups follow those pins. The backpack boosts its own 5 V for the LCD.
+- **EXTINT sharing.** PA03 shares EXTINT3 with PB03 (ENC\_SW), and PA20 shares EXTINT4 with PA04 (ENC\_B). Both partners are unused; just never enable EIC on both pins of a pair.
 - **PA08 is the NMI pin** on the SAMD21. It is on TX1 and unused here; avoid it for interrupts later.
-- **PA03 is also VREFA.** Do not select the external VREFA reference for the ADC while PA03 drives LCD\_D7.
-- **Shared base-board nets.** The SPI bus reaches all three sockets, and TX1/RX1 are shared between sockets 1 and 3. A future Click in socket 3 that needs CS3 or the UART will collide with the LCD wiring.
-- **Power budget.** The W5500 draws roughly 130 mA with a 100 Mbit link, plus the LCD backlight. That is well within USB power through the Curiosity Nano.
+- **Shared base-board nets.** The SPI bus reaches all three sockets, TX1/RX1 are shared between sockets 1 and 3, and SDA/SCL reach every socket. An I2C Click added later shares the bus with the LCD; it just needs an address other than 0x20.
+- **Power budget.** The W5500 draws roughly 130 mA with a 100 Mbit link, plus the LCD backlight, which the backpack's boost draws from 3.3 V (more current than at 5 V). That is well within USB power through the Curiosity Nano.
 - **Encoder wires.** Keep them short for the POC. A long unshielded run next to motors is how phantom counts appear, which is one reason the industrial encoder will use differential outputs.
 
 ## Network side

@@ -65,36 +65,9 @@
 // *****************************************************************************
 // *****************************************************************************
 
-/*** Macros for LCD_D7 pin ***/
-#define LCD_D7_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 3U))
-#define LCD_D7_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 3U))
-#define LCD_D7_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 3U))
-#define LCD_D7_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 3U))
-#define LCD_D7_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 3U))
-#define LCD_D7_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 3U)) & 0x01U)
-#define LCD_D7_PIN                  PORT_PIN_PA03
-
-/*** Macros for LCD_RS pin ***/
-#define LCD_RS_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 8U))
-#define LCD_RS_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 8U))
-#define LCD_RS_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 8U))
-#define LCD_RS_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 8U))
-#define LCD_RS_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 8U))
-#define LCD_RS_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 8U)) & 0x01U)
-#define LCD_RS_PIN                  PORT_PIN_PB08
-
 /*** Macros for ENC_B pin ***/
 #define ENC_B_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 4U)) & 0x01U)
 #define ENC_B_PIN                  PORT_PIN_PA04
-
-/*** Macros for LCD_D5 pin ***/
-#define LCD_D5_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 5U))
-#define LCD_D5_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 5U))
-#define LCD_D5_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 5U))
-#define LCD_D5_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 5U))
-#define LCD_D5_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 5U))
-#define LCD_D5_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 5U)) & 0x01U)
-#define LCD_D5_PIN                  PORT_PIN_PA05
 
 /*** Macros for ETH_INT pin ***/
 #define ETH_INT_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 6U))
@@ -113,6 +86,14 @@
 #define ETH_RST_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 7U))
 #define ETH_RST_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 7U)) & 0x01U)
 #define ETH_RST_PIN                  PORT_PIN_PA07
+
+/*** Macros for LCD_SDA pin ***/
+#define LCD_SDA_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 12U)) & 0x01U)
+#define LCD_SDA_PIN                  PORT_PIN_PA12
+
+/*** Macros for LCD_SCL pin ***/
+#define LCD_SCL_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 13U)) & 0x01U)
+#define LCD_SCL_PIN                  PORT_PIN_PA13
 
 /*** Macros for ETH_MOSI pin ***/
 #define ETH_MOSI_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 16U)) & 0x01U)
@@ -139,36 +120,9 @@
 #define DBG_TX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 22U)) & 0x01U)
 #define DBG_TX_PIN                  PORT_PIN_PA22
 
-/*** Macros for LCD_D6 pin ***/
-#define LCD_D6_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 23U))
-#define LCD_D6_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 23U))
-#define LCD_D6_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 23U))
-#define LCD_D6_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 23U))
-#define LCD_D6_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 23U))
-#define LCD_D6_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 23U)) & 0x01U)
-#define LCD_D6_PIN                  PORT_PIN_PA23
-
 /*** Macros for DBG_RX pin ***/
 #define DBG_RX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 22U)) & 0x01U)
 #define DBG_RX_PIN                  PORT_PIN_PB22
-
-/*** Macros for LCD_E pin ***/
-#define LCD_E_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 23U))
-#define LCD_E_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 23U))
-#define LCD_E_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 23U))
-#define LCD_E_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 23U))
-#define LCD_E_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 23U))
-#define LCD_E_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 23U)) & 0x01U)
-#define LCD_E_PIN                  PORT_PIN_PB23
-
-/*** Macros for LCD_D4 pin ***/
-#define LCD_D4_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 28U))
-#define LCD_D4_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 28U))
-#define LCD_D4_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 28U))
-#define LCD_D4_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 28U))
-#define LCD_D4_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 28U))
-#define LCD_D4_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 28U)) & 0x01U)
-#define LCD_D4_PIN                  PORT_PIN_PA28
 
 /*** Macros for ENC_A pin ***/
 #define ENC_A_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 2U)) & 0x01U)

@@ -9,7 +9,8 @@
  *   - encoder_task() runs every pass (debounce + RPM)
  *   - telemetry_task() emits the ~10 Hz JSON line over UART (MQTT payload shape),
  *     non-blocking so a stalled UART can't hang the loop
- *   - LCD row 0: count / detents / revs   row 1: rpm / dir / button
+ *   - LCD (I2C backpack) row 0: speed ft/s + dir   row 1: total ft.
+ *     lcd_write_line() only buffers; lcd_task() trickles changes out.
  */
 #include <stdio.h>
 #include "definitions.h"
@@ -79,6 +80,7 @@ void app_run(void)
         encoder_task();             /* cheap, self-rate-limiting */
         telemetry_task();           /* ~10 Hz JSON over UART, non-blocking */
         net_mqtt_task();            /* ~1 Hz JSON over MQTT (no-op if down) */
+        lcd_task();                 /* <= 1 short I2C transfer per pass */
 
         if ((now - t_led) >= LED_PERIOD_MS)
         {

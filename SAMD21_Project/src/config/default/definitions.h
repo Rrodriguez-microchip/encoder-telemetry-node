@@ -56,6 +56,7 @@
 #include "peripheral/clock/plib_clock.h"
 #include "peripheral/nvic/plib_nvic.h"
 #include "peripheral/sercom/usart/plib_sercom5_usart.h"
+#include "peripheral/sercom/i2c_master/plib_sercom4_i2c_master.h"
 #include "peripheral/eic/plib_eic.h"
 #include "peripheral/tc/plib_tc3.h"
 #include "bsp/bsp.h"

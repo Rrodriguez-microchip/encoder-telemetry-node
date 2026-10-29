@@ -174,6 +174,8 @@ void SYS_Initialize ( void* data )
 
     SERCOM5_USART_Initialize();
 
+    SERCOM4_I2C_Initialize();
+
     EIC_Initialize();
 
     TC3_TimerInitialize();

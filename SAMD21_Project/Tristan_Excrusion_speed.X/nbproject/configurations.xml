@@ -29,6 +29,10 @@
               <itemPath>../src/config/default/peripheral/port/plib_port.h</itemPath>
             </logicalFolder>
             <logicalFolder name="sercom" displayName="sercom" projectFiles="true">
+              <logicalFolder name="i2c_master" displayName="i2c_master" projectFiles="true">
+                <itemPath>../src/config/default/peripheral/sercom/i2c_master/plib_sercom_i2c_master_common.h</itemPath>
+                <itemPath>../src/config/default/peripheral/sercom/i2c_master/plib_sercom4_i2c_master.h</itemPath>
+              </logicalFolder>
               <logicalFolder name="spi_master" displayName="spi_master" projectFiles="true">
                 <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom1_spi_master.h</itemPath>
                 <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom_spi_master_common.h</itemPath>
@@ -181,14 +185,15 @@
           <itemPath>Tristan_Excrusion_speed_default/components/evsys.yml</itemPath>
           <itemPath>Tristan_Excrusion_speed_default/components/core.yml</itemPath>
           <itemPath>Tristan_Excrusion_speed_default/components/tc3.yml</itemPath>
-          <itemPath>Tristan_Excrusion_speed_default/components/dfp.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/sercom4.yml</itemPath>
           <itemPath>Tristan_Excrusion_speed_default/components/cmsis.yml</itemPath>
           <itemPath>Tristan_Excrusion_speed_default/components/sercom1.yml</itemPath>
-          <itemPath>Tristan_Excrusion_speed_default/components/eic.yml</itemPath>
           <itemPath>Tristan_Excrusion_speed_default/components/sercom5.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/nvmctrl.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/dfp.yml</itemPath>
+          <itemPath>Tristan_Excrusion_speed_default/components/eic.yml</itemPath>
           <itemPath>Tristan_Excrusion_speed_default/components/stdio.yml</itemPath>
           <itemPath>Tristan_Excrusion_speed_default/components/BSP_SAM_D21_Curiosity_Nano.yml</itemPath>
-          <itemPath>Tristan_Excrusion_speed_default/components/nvmctrl.yml</itemPath>
         </logicalFolder>
         <itemPath>Tristan_Excrusion_speed_default/mcc-config.mc4</itemPath>
       </logicalFolder>
@@ -236,6 +241,9 @@
               <itemPath>../src/config/default/peripheral/port/plib_port.c</itemPath>
             </logicalFolder>
             <logicalFolder name="sercom" displayName="sercom" projectFiles="true">
+              <logicalFolder name="i2c_master" displayName="i2c_master" projectFiles="true">
+                <itemPath>../src/config/default/peripheral/sercom/i2c_master/plib_sercom4_i2c_master.c</itemPath>
+              </logicalFolder>
               <logicalFolder name="spi_master" displayName="spi_master" projectFiles="true">
                 <itemPath>../src/config/default/peripheral/sercom/spi_master/plib_sercom1_spi_master.c</itemPath>
               </logicalFolder>
@@ -345,6 +353,7 @@
       <C32>
         <property key="additional-warnings" value="false"/>
         <property key="addresss-attribute-use" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="cast-align" value="false"/>
         <property key="code-model" value="default"/>
         <property key="const-model" value="default"/>
@@ -359,7 +368,7 @@
         <property key="exclude-floating-point" value="false"/>
         <property key="expand-pragma-config" value="false"/>
         <property key="extra-include-directories"
-                  value="../src;../src/config/default;../src/packs/ATSAMD21G17D_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include;../src/drivers/ioLibrary_Driver/Internet/MQTT;../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src;..\src\drivers\ioLibrary_Driver;..\src\drivers\ioLibrary_Driver\Ethernet"/>
+                  value="../src;../src/config/default;../src/drivers/ioLibrary_Driver/Internet/MQTT;../src/drivers/ioLibrary_Driver/Internet/MQTT/MQTTPacket/src;../src/packs/ATSAMD21G17D_DFP;../src/packs/CMSIS/;../src/packs/CMSIS/CMSIS/Core/Include;..\src\drivers\ioLibrary_Driver;..\src\drivers\ioLibrary_Driver\Ethernet"/>
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
         <property key="isolate-each-function" value="true"/>
@@ -423,6 +432,7 @@
         <property key="additional-options-use-response-files" value="false"/>
         <property key="additional-options-write-sla" value="false"/>
         <property key="allocate-dinit" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="code-dinit" value="false"/>
         <property key="ebase-addr" value=""/>
         <property key="enable-check-sections" value="false"/>
@@ -468,6 +478,7 @@
       <C32CPP>
         <property key="additional-warnings" value="false"/>
         <property key="addresss-attribute-use" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="check-new" value="false"/>
         <property key="eh-specs" value="true"/>
         <property key="enable-app-io" value="false"/>
@@ -550,6 +561,8 @@
         <property key="memories.programmemory" value="true"/>
         <property key="memories.programmemory.ranges" value="0-1ffff"/>
         <property key="poweroptions.powerenable" value="false"/>
+        <property key="programmerToGoFilePath"
+                  value="C:/Projects/Tristan&apos;s project/SAMD21_Project/Tristan_Excrusion_speed.X/debug/default/Tristan_Excrusion_speed_ptg"/>
         <property key="programoptions.eraseb4program" value="true"/>
         <property key="programoptions.preservedataflash" value="false"/>
         <property key="programoptions.preservedataflash.ranges"

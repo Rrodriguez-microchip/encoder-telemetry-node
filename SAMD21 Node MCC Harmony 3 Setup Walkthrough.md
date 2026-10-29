@@ -50,11 +50,11 @@ Run the CPU and SERCOMs from a 48 MHz GCLK0, and feed the EIC from a separate sl
 2. **GCLK0 = 48 MHz from the DFLL48M.** Check the SAMD21 Curiosity Nano user guide for a 32.768 kHz crystal. If it is fitted, enable XOSC32K and run the DFLL closed-loop from it, which keeps the 115200 baud UART accurate. If not, open-loop is acceptable for the POC; verify the UART output is clean.
 3. **Flash wait states.** In NVMCTRL, set read wait states to 1 for 48 MHz at 3.3V. Zero wait states at 48 MHz gives random hard faults that look like firmware bugs.
 4. **A slow generator for the EIC.** Configure a spare generator (e.g. GCLK2) from OSCULP32K, about 32 kHz, and route the EIC peripheral clock to it. The EIC filter takes a majority vote over 3 samples of its clock. At 48 MHz that only rejects nanosecond glitches; at 32 kHz it rejects bounce shorter than about 60 µs.
-5. Peripheral clock channels: enable GCLK0 for SERCOM1, SERCOM5, TC3 and TC4. On the SAMD21, TC4 and TC5 share a clock channel, and TC3 shares one with TCC2.
+5. Peripheral clock channels: enable GCLK0 for SERCOM1, SERCOM4, SERCOM5, TC3 and TC4. On the SAMD21, TC4 and TC5 share a clock channel, and TC3 shares one with TCC2.
 
 ## Pin Manager
 
-Set all 17 pins in Pin Configuration → Pin Settings (table view) so the generated macros carry your names, e.g. `ETH_CS_Clear()` and `LCD_E_Set()`.
+Set all 13 pins in Pin Configuration → Pin Settings (table view) so the generated macros carry your names, e.g. `ETH_CS_Clear()` and `ENC_A_Get()`.
 
 | Pin | Function | Custom name | Direction | Initial latch | Pull |
 | --- | --- | --- | --- | --- | --- |
@@ -67,12 +67,8 @@ Set all 17 pins in Pin Configuration → Pin Settings (table view) so the genera
 | PB02 | EIC\_EXTINT2 | ENC\_A | — | — | — |
 | PA04 | EIC\_EXTINT4 | ENC\_B | — | — | — |
 | PB03 | GPIO | ENC\_SW | In | — | Up |
-| PB08 | GPIO | LCD\_RS | Out | Low | — |
-| PB23 | GPIO | LCD\_E | Out | Low | — |
-| PA28 | GPIO | LCD\_D4 | Out | Low | — |
-| PA05 | GPIO | LCD\_D5 | Out | Low | — |
-| PA23 | GPIO | LCD\_D6 | Out | Low | — |
-| PA03 | GPIO | LCD\_D7 | Out | Low | — |
+| PA12 | SERCOM4\_PAD0 | LCD\_SDA | — | — | — |
+| PA13 | SERCOM4\_PAD1 | LCD\_SCL | — | — | — |
 | PA22 | SERCOM5\_PAD0 | DBG\_TX | — | — | — |
 | PB22 | SERCOM5\_PAD2 | DBG\_RX | — | — | — |
 
@@ -80,6 +76,7 @@ Also add the on-board LED0 as a GPIO output named `LED0`, using the pin from the
 
 - **PA18 stays GPIO,** not SERCOM1\_PAD2. The W5500 needs CS held low for a whole multi-byte frame, and software control guarantees that.
 - **ETH\_INT starts as polled GPIO.** Switch it to EIC\_EXTINT6 later if you want interrupt-driven networking.
+- **LCD is on I2C** (Adafruit #292 backpack, changed 2026-10-29). Leave PA12/PA13 internal pull-ups off; the backpack has 10k pull-ups to its VIN, which must be 3.3 V.
 - **ENC\_A/B pull-ups** come from the KY-040 module. Turn on the internal pull-ups too if your module turns out to have none fitted.
 
 ## Components in the Project Graph
@@ -95,6 +92,9 @@ Add each component from Device Resources (Peripherals unless noted), then set it
 | SERCOM1 | Baud rate | 2 MHz to start; up to 12 MHz once stable |
 | SERCOM1 | Hardware slave select | Disabled |
 | SERCOM1 | Interrupts | Disabled (blocking mode) |
+| SERCOM4 | Operating mode | I2C Master (SDA/SCL fixed to PAD0/PAD1 — there are no pinout options) |
+| SERCOM4 | I2C speed | 400 kHz; SDA hold time default |
+| SERCOM4 | Interrupt | On, NVIC priority 3 (below EIC 1 and TC3 2); the Harmony I2C PLIB is interrupt-driven |
 | SERCOM5 | Operating mode | USART with internal clock |
 | SERCOM5 | TX / RX pinout | TX on PAD0, RX on PAD2 |
 | SERCOM5 | Baud / format | 115200, 8N1 |

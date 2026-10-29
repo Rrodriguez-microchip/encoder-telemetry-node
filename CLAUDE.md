@@ -9,103 +9,61 @@ MCC setup is in `SAMD21 Node MCC Harmony 3 Setup Walkthrough.md`.
 
 ## 1. Current state  ← update this section at the end of every session
 
-- **Phase:** P0 ✅ · P2a LCD ✅ · timebase ✅ (tested) · **P1 encoder ✅ (tested on KY-040)** ·
-  telemetry ✅ · robustness nice-to-haves (WDT, non-blocking log, config, speed_ft_s) ✅ (tested) ·
-  **Unity host tests ✅ (10/10 pass on PC)** · **P3 Ethernet ✅ (VERSIONR=0x04, Pi ping 0% loss)** ·
-  **P4 MQTT telemetry ✅ (VERIFIED on HW — live publish, retained /status + last-will)** ·
-  **node_gui desktop dashboard + Settings dialog ✅ (committed, NOT yet HW-verified)** ·
-  **LCD now shows speed ft/s + total extruded ✅ (committed, NOT yet confirmed rendering on HW)** ·
-  **P5 keepalive tuning ✅ (HW-verified: KEEPALIVE_S 60→15, offline in ~22 s)**.
-  **Next: HW-verify the GUI/LCD work, then rest of P5 (NVM config + UART CLI) OR the teaching guide.**
-- **Last session (2026-10-09):** caught CLAUDE.md §1 up to 5 commits that had landed since the
-  2026-10-08 writeup (a tool-switch gap). Those commits, oldest→newest:
-  `9b2c8a8` geometry→feet_per_rev stub (`config_calc_feet_per_rev_milli()`, all-integer, four
-  `CFG_GEOM_*` STUB values still 0/1 — fill in real gear/roller data, then switch
-  `config_feet_per_rev_milli()` to return it; see `FT_S_CALIBRATION_TODO.md`) ·
-  `0fc8ce2`/`7b13c32`/`39b314a` **node_gui** — a cross-platform (Pi4 + Windows) Tkinter MQTT
-  dashboard: read-only live viewer (RPM/speed/dir/total/status light), a GUI-only "Reset total"
-  tare, and a customer Settings dialog (broker IP/port + area/node, reconnects on save).
-  Clean split: `main.py` wires, `config.py`/`settings_store.py` config, `mqtt_client.py` backend,
-  `telemetry_model.py` shared state, `ui/` layout — mirrors the firmware's layering. See
-  `node_gui/README.md`. **Untested on HW — not confirmed against a live broker.** ·
-  `7797aa5` **LCD layout change**: dropped count/detents/rpm; row0 = `"<n>.<2> ft/s <dir>"`,
-  row1 = `"Tot <n>.<2> ft"`. Both now come from shared `telemetry_speed_milli_ft_s()` /
-  `telemetry_total_milli_ft()` so the LCD and JSON payload use ONE copy of the material math and
-  can't drift. **Not yet confirmed it renders correctly on the panel.**
-- **P5 (small) this session (2026-10-09), HW-VERIFIED:** `KEEPALIVE_S` 60→15 in `net_mqtt.c`
-  (dead-node `offline` detection ~90 s → ~22 s; free while healthy — the 1 Hz publish resets the
-  broker's keepalive timer, so no extra PINGREQ traffic). Reconnect path needed no work: it was
-  already complete from the P4 WDT fix (publish-fail → `s_connected=false` → lazy-connect retries
-  every 3 s → re-publishes on success). Verified on HW: `online` + steady 1 Hz telemetry, no false
-  `offline` over a minute idle, and a cable-pull fired `offline` in ~22 s. (Pi test gotcha:
-  `mosquitto_sub -F '%I ...'` prints nothing on older builds — `%I` is unsupported; use plain `-v`,
-  or pipe through `date` for timestamps.)
-- **Cleanup to flag:** `node_gui/__pycache__/*.pyc` (7 files) got committed even though
-  `node_gui/.gitignore` lists `__pycache__/`. The ignore only applies to untracked files, so the
-  already-staged `.pyc`s slipped in. Worth a `git rm -r --cached node_gui/**/__pycache__` in a
-  tidy-up commit; harmless but noise.
-- **(2026-10-08) P4 verification:** flashed & verified P4 on HW. Hit a WDT reset loop first
-  (banner reprinting every ~2 s): the blocking `net_mqtt_connect()` ran in init *before* the
-  superloop, so the WDT (~1.9 s) was never petted while `connect()` spun on the TCP handshake.
-  Fixed by (a) `setRTR(2000)/setRCR(3)` in `w5500_net_up()` so a failed connect times out in
-  ~0.8 s (default ~1.8 s was right at the WDT edge); (b) removing the connect from `app.c` init;
-  (c) `net_mqtt_task()` now connects lazily inside the loop and retries every 3 s while down.
-  Net: the node runs encoder/LCD/UART regardless of the network and auto-(re)connects whenever
-  the broker is reachable — tolerates a broker that's off at boot or comes and goes. After the
-  fix: `mosquitto_sub` on the Pi showed `bldg/extrusion/node01/telemetry {...}` ~1 Hz, values
-  tracking the knob. Mosquitto confirmed `LISTEN 0.0.0.0:1883`. Pi 4 (Debian, user `ramon`,
-  host `Test`) on SSH over LAN.
-  Then did **P4 step 2** (retained `/status` + last-will) — HW-verified: `status online` on
-  connect, `status offline` fired by the broker on reconnect (session takeover kicks the zombie
-  session → fires the will). Note: an unclean drop (cable pull) only surfaces `offline` after the
-  keepalive timeout (~1.5× 60 s ≈ 90 s), OR instantly on reconnect via takeover — both expected.
-  P5 can lower `KEEPALIVE_S` if faster node-down detection is wanted.
-- **LCD gotcha (cost an hour):** 1602A VDD must be **5 V**, not 3.3 V. On 3.3 V it rendered
-  faintly/intermittently (looked like a contrast problem); the real issue is the 5 V HD44780's
-  V_IH. 5 V VDD → crisp. Node logic lines are 3.3 V and clear the 5 V panel's input threshold
-  fine; it's VDD that must be 5 V.
-- **Committed:** `tests/` Unity suite (`6b13534`, local only — the earlier push to GitHub hit a
-  transient 500; retry `git push` when convenient).
-- **Committed (P3/P4, 2026-10-08):** P3 Ethernet + P4 MQTT (telemetry + /status + last-will) —
-  `e886f19`/`e2d9f0b`/`c74469f`. ioLibrary submodule + `.gitmodules`, `drivers/w5500_port.c/.h`,
-  `services/net_mqtt.c/.h`, `services/timebase.c` (MilliTimer hook), `app/app.c`, MPLAB project
-  files. Submodule verified pristine (an unnecessary `../wizchip_conf.h` edit in `w5500.h` was
-  reverted; clean rebuild passes).
-- **ioLibrary MPLAB gotchas (for the install guide later):** adding files and adding include dirs
-  are TWO separate steps — "No such file" = missing include dir (Properties → xc32-gcc →
-  *Preprocessing and messages* → Include directories); "undefined reference" = missing `.c` in
-  Source Files (Add Existing Item). Preprocessor macro `_WIZCHIP_=W5500` is required (header
-  defaults to W6300; `w5500.c` is `#if (_WIZCHIP_==5500)`). **Four** ioLibrary include dirs now:
-  `.../Ethernet`, `.../ioLibrary_Driver`, `.../Internet/MQTT`, `.../Internet/MQTT/MQTTPacket/src`.
-  MQTT `.c` files in the project: `MQTTClient.c`, `mqtt_interface.c`, all `MQTTPacket/src/*.c`.
-  Never edit submodule files.
-- **Pi static-IP gotcha:** direct cable = no DHCP, so the Pi's `eth0` needs a manual IP on the
-  node's /24. `nmcli con mod node-link ipv4.addresses 192.168.1.5/24` — **the /24 matters**: a /32
-  (what the first bad `nmcli` left) makes the Pi think it's the only host on the net, so ARP for
-  .50 never leaves and ping is 100% loss. Node 192.168.1.50, Pi 192.168.1.5, mask /24.
+- **Phase:** P0 ✅ · P2a LCD ✅ · timebase ✅ · **P1 encoder ✅ (KY-040)** · telemetry ✅ ·
+  robustness nice-to-haves (WDT, non-blocking log, config, speed_ft_s) ✅ · **Unity host tests ✅
+  (10/10)** · **P3 Ethernet ✅** · **P4 MQTT ✅ (HW: telemetry, retained /status + last-will)** ·
+  **P5 keepalive 60→15 s ✅ (HW: offline in ~22 s)** · **LCD on I2C backpack ✅ (HW-verified,
+  2026-10-29)** · node_gui dashboard ✅ (committed, NOT yet HW-verified) · teaching guide ✅
+  (written, uncommitted). **Next: HW-verify node_gui, then rest of P5 (NVM config + UART CLI).**
+- **This session (2026-10-29) — LCD moved to Adafruit #292 I2C backpack (fewer wires), HW-verified:**
+  MCC: SERCOM4 = I2C master 400 kHz, SDA=PA12 (PAD0) / SCL=PA13 (PAD1), IRQ prio 3; the six old
+  LCD GPIOs (PB08/PB23/PA28/PA05/PA23/PA03) released. None of the freed pins could do I2C (no
+  usable SERCOM PAD0/PAD1 pair), hence PA12/PA13. `drivers/lcd_hd44780.c/.h` rewritten for the
+  MCP23008 (0x20; GP1=RS, GP2=E, GP3-6=D4-D7, GP7=backlight): IOCON.SEQOP=1 so one LCD char = one
+  7-byte I2C write; `lcd_write_line()` only fills a 2×16 shadow buffer and `lcd_task()` (new, in
+  the superloop) sends ≤1 transfer/pass, changed chars only. Missing backpack → logs once, display
+  disabled, node runs on. Removed `lcd_putc/_puts/_set_cursor` (unused). MCC gotcha: I2C mode has
+  no pad-select options — SDA/SCL are fixed to PAD0/PAD1; just pick the pins in Pin Manager.
+  **Wiring: backpack VIN = 3.3 V** (its 10k SDA/SCL pull-ups go to VIN; SAMD21 not 5 V tolerant;
+  the onboard boost still gives the LCD 5 V). Bench uses the 5-pin terminal block
+  (CLK=SCL, DAT=SDA, LAT open, "5V"=VIN←3.3 V); final = STEMMA QT 4-pin cable. Also confirmed the
+  speed ft/s + total extruded rows render (closes the `7797aa5` verification item).
+- **Uncommitted (Ramon commits from Sourcetree):** the I2C LCD change (driver + `app.c` + MCC
+  regen incl. `sercom/i2c_master/`) + these doc updates; `teaching_guide/` (9 files, read-in-order
+  `01-big-picture` → `08-from-scratch`, heavy Ethernet/MQTT emphasis per [[teaching-guide-request]]);
+  1-line `node_gui/config.py` comment (keepalive follow-up).
+- **Earlier commits worth knowing:** `9b2c8a8` geometry→feet_per_rev STUB
+  (`config_calc_feet_per_rev_milli()`, `CFG_GEOM_*` still 0/1 — fill in, then switch
+  `config_feet_per_rev_milli()`; see `FT_S_CALIBRATION_TODO.md`) · `0fc8ce2`/`7b13c32`/`39b314a`
+  **node_gui** (Tkinter MQTT dashboard, Pi4 + Windows: read-only viewer, GUI-only "Reset total"
+  tare, Settings dialog; see `node_gui/README.md`) · `7797aa5` LCD rows from shared
+  `telemetry_speed_milli_ft_s()`/`_total_milli_ft()` · `39e5bc7` keepalive 15 s · `b6e9e40`
+  cleared committed `__pycache__`. `tests/` (`6b13534`) may still need a `git push`.
+- **P4/P5 network notes:** the node runs encoder/LCD/UART regardless of the network; MQTT connects
+  lazily in the loop and retries every 3 s (blocking connect in init reset-looped the WDT). Unclean
+  drop → `offline` after ~1.5× keepalive (~22 s now) or instantly on reconnect via session
+  takeover. Pi test gotcha: `mosquitto_sub -F '%I ...'` prints nothing on older builds — use `-v`.
+- **ioLibrary MPLAB gotchas (for the install guide):** adding files and include dirs are TWO steps —
+  "No such file" = missing include dir; "undefined reference" = missing `.c` (Add Existing Item).
+  `_WIZCHIP_=W5500` define required. Four include dirs: `.../Ethernet`, `.../ioLibrary_Driver`,
+  `.../Internet/MQTT`, `.../Internet/MQTT/MQTTPacket/src`. Never edit submodule files.
+- **Pi static-IP gotcha:** direct cable = no DHCP; `nmcli con mod node-link ipv4.addresses
+  192.168.1.5/24` — **the /24 matters** (a /32 makes ARP for .50 never leave). Node .50, Pi .5.
 - **Next steps:**
-  1. **HW-verify the uncommitted-risk work:** (a) run `node_gui` against the live Pi broker and
-     confirm tiles/status-light track the node; (b) confirm the new LCD rows render (speed ft/s +
-     total extruded) on the 5 V panel. Both are committed but unverified on HW.
-  2. **P5 robustness:** NVM config (persist `node`/`area`/`feet_per_rev` + broker IP so they
-     survive reflash — ties into the geometry stub and the deployment pairing question),
-     UART CLI, keepalive tuning (lower `KEEPALIVE_S` for faster node-down detection).
-  3. Tidy-up: drop the committed `node_gui/**/__pycache__/*.pyc` (see cleanup note above).
-  4. Optional: P1b TC4/EVSYS capture.
-  5. Bench wiring: distribute 5 V / GND better (breadboard power rail or Wago 221 lever nuts,
-     not a solder nest). One solid common ground for LCD/W5500/encoder/Nano; LCD backlight on
-     its own run back to the source.
-- **Deployment open question (Ramon, P5/P6):** does customer-site install need the same manual
-  static-IP dance? If the plant LAN has DHCP it won't; an isolated run will. Decide whether network
-  pairing lives *in* the planned node GUI or in a separate setup guide — see [[deployment-network-pairing-question]].
+  1. HW-verify `node_gui` against the live Pi broker (tiles + status light track the node).
+  2. **P5 robustness:** NVM config (`node`/`area`/`feet_per_rev` + broker IP, survive reflash —
+     ties into the geometry stub and the pairing question), UART CLI.
+  3. Optional: P1b TC4/EVSYS capture. Optional: 24AA02E48 MAC EEPROM on the same I2C bus.
+  4. Bench wiring: one solid common ground for LCD/W5500/encoder/Nano (rail or Wago 221s).
+- **Deployment open question (Ramon, P5/P6):** does customer-site install need the manual static-IP
+  dance? Plant LAN with DHCP → no; isolated run → yes. GUI pairing vs. setup guide — see
+  [[deployment-network-pairing-question]].
 - **How to run the host tests:** `cd SAMD21_Project/tests && make` (needs gcc on PATH). gcc is at
-  `…/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_*/mingw64/bin`;
-  a fresh shell picks it up, else prepend that bin to PATH (same pattern as the §4 XC32 build).
-- **Open MCC to-dos (Ramon):** none outstanding — GCLK2 is now repurposed to clock the WDT.
-- **Hardware notes:** KY-040 is mechanically bouncy — `invalid` counter climbs and counts drift
-  slightly; this is the cheap knob, not the firmware (the production optical encoder won't do it).
-  RPM reads cleanly, which is what matters. LCD contrast best near the end of the pot's travel.
-  **LCD VDD must be 5 V** (not 3.3 V) — on 3.3 V the 5 V HD44780 renders faintly/not at all.
+  `…/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_*/mingw64/bin`.
+- **Open MCC to-dos (Ramon):** none.
+- **Hardware notes:** KY-040 is bouncy (`invalid` climbs, counts drift slightly) — the knob, not the
+  firmware; RPM is clean. LCD contrast is now the backpack's own pot. The old "LCD VDD must be
+  5 V" lesson still holds — the backpack's boost provides it from a 3.3 V VIN.
 
 ---
 
@@ -184,8 +142,7 @@ on the Curiosity Nano Base for Click boards.
 | ENC_A | PB02 | EIC EXTINT2, both edges, filter, interrupt; event output on (future TC4 capture) |
 | ENC_B | PA04 | EIC EXTINT4, both edges, filter, interrupt |
 | ENC_SW | PB03 | GPIO in, pull-up, polled |
-| LCD_RS / LCD_E | PB08 / PB23 | GPIO out |
-| LCD_D4..D7 | PA28 / PA05 / PA23 / PA03 | GPIO out; 1602A HD44780 at 5 V, 4-bit, RW tied to GND |
+| LCD_SDA / LCD_SCL | PA12 / PA13 | SERCOM4 I2C master (PAD0/PAD1), 400 kHz, IRQ prio 3 → Adafruit #292 backpack (MCP23008 @ 0x20) → 1602A. Backpack VIN = **3.3 V** (pull-ups to VIN); its boost makes the LCD's 5 V |
 | ETH MOSI/SCK/MISO | PA16 / PA17 / PA19 | SERCOM1 SPI mode 0, 2 MHz, blocking (W5500 ETH WIZ Click, socket 1, **unplugged until P3**) |
 | ETH_CS / RST / INT | PA18 / PA07 / PA06 | CS idle high |
 | DBG TX/RX | PA22 / PB22 | SERCOM5 → Curiosity Virtual COM, 115200 8N1, blocking mode |
@@ -195,7 +152,7 @@ KY-040 proof-of-concept encoder: 20 detents/rev, 4 counts/detent, 80 counts/rev,
 
 **Clocks / interrupts:** DFLL48M → GCLK0 48 MHz (NVM RWS = 1). GCLK3 = DFLL/48 = 1 MHz → EIC.
 GCLK2 = OSCULP32K / 31 ≈ 1.06 kHz → WDT (5-bit divider caps at 31, so ÷31 not ÷32; close enough).
-TC3 = 1 ms tick (CC0 = 47999, MPWM). NVIC priorities: EIC 1, TC3 2. SysTick = free-running,
+TC3 = 1 ms tick (CC0 = 47999, MPWM). NVIC priorities: EIC 1, TC3 2, SERCOM4 (I2C) 3. SysTick = free-running,
 no interrupt, used only by `delay_us/ms`. TC4 is reserved for P1b.
 **WDT:** enabled by config fuse (`initialization.c`: WDT_ENABLE, WDT_PER=CYC2048 ≈ 1.9 s, window
 off). No WDT PLIB in this CSP — `services/wdt.c` kicks it with a direct CLEAR-key register write.
@@ -210,6 +167,8 @@ off). No WDT PLIB in this CSP — `services/wdt.c` kicks it with a direct CLEAR-
 | `dir` = 0 when stopped | A dashboard showing a direction on a stopped shaft is misleading. |
 | SysTick for blocking delays | Doesn't touch TC3; used only for short LCD timing. |
 | LCD updates via `lcd_write_line()` (overwrite + pad) | No clear → no flicker, no 2 ms wait. |
+| LCD via I2C backpack (SERCOM4, PA12/PA13), not 6 parallel GPIOs or the backpack's SPI mode | One 4-wire STEMMA QT cable, shareable bus (future MAC EEPROM), ACK detects a missing display. None of the freed LCD pins form an I2C pad pair; SPI would mean 5 wires + a solder jumper. |
+| LCD driver is buffered + non-blocking: `lcd_task()` sends ≤1 I2C write/pass, changed chars only; MCP23008 IOCON.SEQOP=1 | A blocking ~5 ms I2C refresh would starve the 1 ms encoder poll. SEQOP keeps multi-byte writes on GPIO (default auto-increment wraps into IODIR), so one char = one transfer. |
 | Floor division for detents/revs | C truncates toward zero, so `-1/80 == 0` would be wrong. |
 | RPM: edge timestamps (µs) in a ring buffer, averaged; 1 s with no edge → 0 | Smooth at low speed; µs resolution needed at 600 PPR (edges about every 60 µs). |
 | Production target: 600 PPR at about 420 RPM (about 16.8 k edges/s) | Fits EIC + ISR (about 7% CPU). The SAMD21 has no hardware quadrature decoder; above about 50 k edges/s use an LS7366R or a SAME5x with PDEC. |
